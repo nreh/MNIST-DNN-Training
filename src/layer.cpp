@@ -22,6 +22,18 @@ public:
     float** weights;
 
     /**
+     * @brief Number of neurons in previous layer. A value of zero indicates that this layer is the input layer.
+     */
+    int previous_layer_size = 0;
+
+    /**
+     * @brief Number of neurons in this layer. 
+     */
+    int size = 0;
+
+
+
+    /**
      * @brief Construct a new input layer. This should only be the first layer of the Network.
      * 
      * @param size Number of neurons in this layer
@@ -42,11 +54,20 @@ public:
      *                            is the number of input values.
      */
     Layer(int size, int previous_layer_size) {
+
+        this->size = size;
+        this->previous_layer_size = previous_layer_size;
+
         // initialize weight matrix
         weights = new float*[previous_layer_size];
         for(int x=0; x<previous_layer_size; x++) {
             weights[x] = new float[size];
         }
+    }
+
+    ~Layer() {
+
+        cout << "Deleted layer" << endl;
     }
 
 };

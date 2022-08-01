@@ -17,6 +17,12 @@ public:
      */
     vector<Layer> layers;
 
+    /**
+     * @brief Construct a new Neural Network
+     * 
+     * @param layer_sizes An array containing size of layers in network
+     * @param num_layers Number of layers in network (AKA the size of layer_sizes array)
+     */
     Network(int layer_sizes[], int num_layers) {
 
         /**
@@ -48,6 +54,13 @@ public:
     float* propagate(float* input, int input_size) {
         return NULL;
     }
-    
+
+
+    // Clean up
+
+    ~Network() {
+        layers.clear();
+        cout << "Deleted Network" << endl;
+    }    
     
 };

@@ -11,9 +11,17 @@ int main() {
 
     int num_layers = sizeof(layer_sizes)/sizeof(int); // calculate the size of layer_sizes
 
+    cout << "creation..." << endl; 
+    
     Network* network = new Network( layer_sizes, num_layers );
 
-    cout << "Created network with " << num_layers << " layers" << endl;    
+    network->layers[1].weights[0][0] = 0;
+
+    cout << "Created network with " << num_layers << " layers" << endl;
+
+    delete network;
+
+    // // network->layers[1].weights[0][0] = 0;
 
     return 0;
 }
