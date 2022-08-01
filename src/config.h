@@ -2,9 +2,8 @@
  * Config file for network initialization and training
  */
 
-/**------------------------------------------------------------------------
- *                     Normal distribution parameters
- *------------------------------------------------------------------------**/
+
+/*------------------------------ Normal Distribution Config --------------------------------*/
 
 /**
  * @brief Normal distribution mean 
