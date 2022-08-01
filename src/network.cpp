@@ -1,8 +1,11 @@
+#include <iostream>
 #include <vector>
 #include <stdexcept> // for exceptions
 #include <string>
 
 #include "layer.cpp"
+
+using namespace std;
 
 using namespace std;
 
