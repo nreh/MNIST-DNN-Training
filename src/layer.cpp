@@ -20,7 +20,7 @@ public:
 
     /**
      * 2-D array containing weights for each neuron in the previous layer to each neuron in the current layer.
-     * 
+     *
      * * This is the Weight-Matrix *
      */
     float** weights;
@@ -31,13 +31,13 @@ public:
     int previous_layer_size = 0;
 
     /**
-     * @brief Number of neurons in this layer. 
+     * @brief Number of neurons in this layer.
      */
     int size = 0;
 
     /**
      * @brief Construct a new input layer. This should only be the first layer of the Network.
-     * 
+     *
      * @param size Number of neurons in this layer.
      */
     Layer(int size) {
@@ -50,7 +50,7 @@ public:
 
     /**
      * @brief Construct a new hidden layer.
-     * 
+     *
      * @param size Number of neurons in this layer.
      * @param previous_layer_size Number of neurons in previous layer. If this is the first layer (input layer), then this
      *                            is the number of input values.
@@ -62,8 +62,8 @@ public:
 
         // initialize weight matrix
 
-        weights = new float*[previous_layer_size];
-        for(int x=0; x<previous_layer_size; x++) {
+        weights = new float* [previous_layer_size];
+        for (int x = 0; x < previous_layer_size; x++) {
             weights[x] = new float[size];
         }
 
@@ -72,8 +72,8 @@ public:
         default_random_engine engine;
         normal_distribution<float> distr(INIT_NORMAL_MEAN, INIT_NORMAL_STDDEV);
 
-        for(int x=0; x<previous_layer_size; x++) {
-            for(int y=0; y<size; y++) {
+        for (int x = 0; x < previous_layer_size; x++) {
+            for (int y = 0; y < size; y++) {
                 weights[x][y] = distr(engine);
             }
         }
@@ -82,7 +82,7 @@ public:
 
         biases = new float[size];
 
-        for(int x=0; x<size; x++) {
+        for (int x = 0; x < size; x++) {
             biases[x] = distr(engine);
         }
 
@@ -90,7 +90,7 @@ public:
 
     /**
      * @brief Propagate data through layer and output result to a destination array.
-     * 
+     *
      * @param in Input values to propagate through. Size is equal to previous_layer_size.
      * @param out Destination array to output result to. Size is equal to this layer size.
      */
@@ -100,7 +100,7 @@ public:
 
         out = new float[size]();
 
-        for(int x=0; x<previous_layer_size; x++) {
+        for (int x = 0; x < previous_layer_size; x++) {
             dotProduct(in[x], weights[x], out, size);
         }
 

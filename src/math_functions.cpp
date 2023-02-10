@@ -19,7 +19,7 @@ class ActivationFunctions {
 };
 
 void dotProduct(float a, float* b, float* c, int length) {
-    for(int x=0; x<length; x++) {
+    for (int x = 0; x < length; x++) {
         c[x] += a * b[x];
     }
 }
