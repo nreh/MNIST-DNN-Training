@@ -5,4 +5,4 @@ debug:
 	g++ src/main.cpp -oa -g
 
 clean:
-	rm -f a.out
+	rm -f a
