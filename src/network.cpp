@@ -3,6 +3,8 @@
 #include <stdexcept> // for exceptions
 #include <string>
 
+#include <glog/logging.h>
+
 #include "layer.cpp"
 
 using namespace std;
@@ -63,7 +65,7 @@ public:
 
     ~Network() {
         layers.clear();
-        cout << "Deleted Network" << endl;
+        LOG(INFO) << "Deleted Network";
     }
 
 };

@@ -14,6 +14,7 @@ class ActivationFunctions {
 
     static float sigmoid(float x) {
         //todo: implement
+        return 0;
     }
 
 };
