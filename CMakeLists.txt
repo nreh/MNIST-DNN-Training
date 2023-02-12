@@ -10,10 +10,9 @@ project(
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_subdirectory(extern/glog)
-
 include_directories(extern/termcolor)
+add_subdirectory(extern/spdlog)
 
 # glog library for logging
 add_executable(runme ./src/main.cpp)
-target_link_libraries(runme glog::glog)
+target_link_libraries(runme spdlog::spdlog)

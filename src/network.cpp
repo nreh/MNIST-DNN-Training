@@ -3,8 +3,6 @@
 #include <stdexcept> // for exceptions
 #include <string>
 
-#include <glog/logging.h>
-
 #include "layer.cpp"
 
 using namespace std;
@@ -27,11 +25,6 @@ public:
      * @param num_layers Number of layers in network (AKA the size of layer_sizes array)
      */
     Network(int layer_sizes[], int num_layers) {
-
-        LOG(WARNING) << "Deleted Network";
-        // LOG(ERROR) << "Deleted Network";
-        LOG(FATAL) << "Deleted Network";
-
         /**
          * Error checking
          */
@@ -67,7 +60,6 @@ public:
 
     ~Network() {
         layers.clear();
-        LOG(INFO) << "Deleted Network";
     }
 
 };
