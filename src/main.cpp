@@ -1,14 +1,15 @@
 #include <iostream>
+
 #include <glog/logging.h>
+#include <termcolor/termcolor.hpp>
+
 
 #include "network.cpp"
 #include "logging.cpp"
 
 using namespace std;
 
-int main(int argc, char* argv[])
-{
-
+int main(int argc, char* argv[]) {
     logging::initialize(argv);
 
     int layer_sizes[] = {
@@ -17,13 +18,13 @@ int main(int argc, char* argv[])
 
     int num_layers = sizeof(layer_sizes) / sizeof(int); // calculate the size of layer_sizes
 
-    cout << "creation..." << endl;
+    LOG(INFO) << "creation...";
 
     Network* network = new Network(layer_sizes, num_layers);
 
     network->layers[1].weights[0][0] = 0;
 
-    cout << "Created network with " << num_layers << " layers" << endl;
+    LOG(INFO) << "Created network with " << num_layers << " layers" << endl;
 
     delete network;
 

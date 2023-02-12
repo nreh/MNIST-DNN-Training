@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(extern/glog)
 
+include_directories(extern/termcolor)
+
 # glog library for logging
 add_executable(runme ./src/main.cpp)
 target_link_libraries(runme glog::glog)

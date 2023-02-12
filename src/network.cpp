@@ -9,8 +9,6 @@
 
 using namespace std;
 
-using namespace std;
-
 /**
  * A neural network with layers and neurons in each layer. Has functions used to execute training iterations.
  */
@@ -29,6 +27,10 @@ public:
      * @param num_layers Number of layers in network (AKA the size of layer_sizes array)
      */
     Network(int layer_sizes[], int num_layers) {
+
+        LOG(WARNING) << "Deleted Network";
+        // LOG(ERROR) << "Deleted Network";
+        LOG(FATAL) << "Deleted Network";
 
         /**
          * Error checking
