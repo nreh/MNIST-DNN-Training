@@ -3,6 +3,8 @@
 #include <stdexcept> // for exceptions
 #include <string>
 
+#include "logging.h" // for logging
+
 #include "layer.cpp"
 
 using namespace std;
@@ -29,7 +31,7 @@ public:
          * Error checking
          */
         if (num_layers < 2) {
-            cout << "Network must contain at least 2 layers" << endl;
+            throw std::runtime_error("Network must contain at least 2 layers");
         }
 
         // first create the input layer,
@@ -40,6 +42,7 @@ public:
             layers.push_back(Layer(layer_sizes[x], layer_sizes[x - 1]));
         }
 
+        SPDLOG_DEBUG("Created network with {0} layers", num_layers);
     }
 
     /*------------------------------------------- Training Functions -------------------------------------------*/
@@ -60,6 +63,7 @@ public:
 
     ~Network() {
         layers.clear();
+        SPDLOG_DEBUG("Deleted network");
     }
 
 };
