@@ -4,6 +4,7 @@
 #include "config.h"
 #include "neuron.cpp"
 #include "math_functions.cpp"
+#include "exceptions.h"
 
 using namespace std;
 
@@ -26,7 +27,8 @@ public:
     float** weights;
 
     /**
-     * @brief Number of neurons in previous layer. A value of zero indicates that this layer is the input layer.
+     * @brief Number of neurons in previous layer. If this is the first layer (input layer), then this
+    *         is the number of input values.
      */
     int previous_layer_size = 0;
 
@@ -34,6 +36,11 @@ public:
      * @brief Number of neurons in this layer.
      */
     int size = 0;
+
+    /**
+     * @brief Index in the neural network that this layer is in.
+     */
+    int layer_index = 0;
 
     /**
      * @brief Construct a new input layer. This should only be the first layer of the Network.
@@ -54,11 +61,13 @@ public:
      * @param size Number of neurons in this layer.
      * @param previous_layer_size Number of neurons in previous layer. If this is the first layer (input layer), then this
      *                            is the number of input values.
+     * @param layer_index Index in the neural network that this layer is in.
      */
-    Layer(int size, int previous_layer_size) {
+    Layer(int size, int previous_layer_size, int layer_index) {
 
         this->size = size;
         this->previous_layer_size = previous_layer_size;
+        this->layer_index = layer_index;
 
         // initialize weight matrix
 
@@ -98,7 +107,13 @@ public:
 
         // matrix multiplication of in and weight-matrix
 
-        out = new float[size]();
+        // the input layer cannot have propagate called on it
+        if (layer_index == 0) {
+            throw invalid_function_call("The propagate function cannot be called on the input layer.");
+        }
+
+        // this is now done by calling function for the sake of cache efficiency (I... think... 😕)
+        // // out = new float[size]();
 
         for (int x = 0; x < previous_layer_size; x++) {
             dotProduct(in[x], weights[x], out, size);

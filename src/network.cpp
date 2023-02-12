@@ -39,7 +39,7 @@ public:
 
         // now create hidden and ouput layers,
         for (int x = 1; x < num_layers; x++) {
-            layers.push_back(Layer(layer_sizes[x], layer_sizes[x - 1]));
+            layers.push_back(Layer(layer_sizes[x], layer_sizes[x - 1], x));
         }
 
         SPDLOG_DEBUG("Created network with {0} layers", num_layers);
@@ -50,11 +50,31 @@ public:
     /**
      * @brief Propagate input through neural network.
      *
-     * @param input Input values to network as an array of floats.
-     * @param input_size Size of input array.
+     * @param activations 2D array containing the activations of each layer in network. the first array will contain the
+     *                    input to the network and last array will contain the ouput values once input propagates.
      * @return Array of floats containing neuron activation of output layer.
      */
-    float* propagate(float* input, int input_size) {
+    float* propagate(float** activations) {
+        /**
+         *?                         ==================================================
+         *?                                       🛈 How propagation works
+         *?                         ==================================================
+         *
+         * Take two adjacent layers called A & B. The first neuron in layer A is called A0.
+         *
+         * To calculate the activation of a single neuron, let's say B0:
+         *  - Multiply activation of A0 with weight of neuron connection from A0 to B0 & add bias of B0
+         *  - Do the same for the rest of the neurons in layer A and add them up, let's call the resulting value: z
+         *  - So, z = Σ(activations_A * weights_A_B + biases_B)
+         *  - The activation of B0 will be f(z) where f is the activation function of B0 (ex. RELU, Sigmoid)
+         *
+        */
+
+        for (int x = 0; x < layers.size(); x++) {
+            layers[x + 1].propagate(activations[x], activations[x + 1]);
+        }
+
+
         return NULL;
     }
 
