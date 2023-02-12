@@ -31,7 +31,7 @@ public:
          * Error checking
          */
         if (num_layers < 2) {
-            throw std::runtime_error("Network must contain at least 2 layers");
+            throw std::invalid_argument("Network must contain at least 2 layers");
         }
 
         // first create the input layer,

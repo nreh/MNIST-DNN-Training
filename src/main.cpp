@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     try {
         network = new Network(layer_sizes, num_layers);
-    } catch (runtime_error e) {
+    } catch (invalid_argument e) {
         SPDLOG_ERROR(e.what());
         return 1;
     }
