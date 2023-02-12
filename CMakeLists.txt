@@ -15,4 +15,5 @@ add_subdirectory(extern/spdlog)
 
 # glog library for logging
 add_executable(runme ./src/main.cpp)
+target_compile_definitions(spdlog PUBLIC SPDLOG_COMPILED_LIB)
 target_link_libraries(runme spdlog::spdlog)
