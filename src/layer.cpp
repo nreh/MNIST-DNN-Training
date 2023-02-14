@@ -116,7 +116,7 @@ public:
         // // out = new float[size]();
 
         for (int x = 0; x < previous_layer_size; x++) {
-            dotProduct(in[x], weights[x], out, size);
+            dot_product(in[x], weights[x], out, size);
         }
 
     }
