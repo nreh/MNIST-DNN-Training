@@ -16,6 +16,6 @@ namespace logging {
         spdlog::set_level(spdlog::level::trace); // Set global log level to trace
 
         // change log pattern
-        spdlog::set_pattern("src/%s:%# %^[%l]: %v%$");
+        spdlog::set_pattern("%s:%# %^[%l]: %v%$");
     }
 }
