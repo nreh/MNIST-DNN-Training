@@ -3,7 +3,7 @@
 
 #include "network.cpp"
 #include "logging.cpp" // contains #import <spdlog/spdlog.h> as well as configuration defines
-#include "trainer.cpp"
+#include "trainer/trainer.cpp"
 
 using namespace std;
 
