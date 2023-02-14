@@ -78,7 +78,7 @@ public:
 
         // randomly initialize weights on a normal distribution
 
-        default_random_engine engine;
+        default_random_engine engine(time(0));
         normal_distribution<float> distr(INIT_NORMAL_MEAN, INIT_NORMAL_STDDEV);
 
         for (int x = 0; x < previous_layer_size; x++) {
