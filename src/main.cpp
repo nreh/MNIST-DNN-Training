@@ -1,7 +1,9 @@
 #include <iostream>
+#include <vector>
 
 #include "network.cpp"
 #include "logging.cpp" // contains #import <spdlog/spdlog.h> as well as configuration defines
+#include "trainer.cpp"
 
 using namespace std;
 
@@ -15,20 +17,17 @@ int main(int argc, char* argv[]) {
 
     int num_layers = sizeof(layer_sizes) / sizeof(int); // calculate the size of layer_sizes
 
-    Network* network;
+    vector<Trainer> trainers;
 
     try {
-        network = new Network(layer_sizes, num_layers);
+        Network network(layer_sizes, num_layers);
+
+        Trainer trainer(network);
+        trainers.push_back(trainer);
     } catch (invalid_argument e) {
         SPDLOG_ERROR(e.what());
         return 1;
     }
-
-    network->layers[1].weights[0][0] = 0;
-
-    delete network;
-
-    // // network->layers[1].weights[0][0] = 0;
 
     return 0;
 }
