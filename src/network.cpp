@@ -51,10 +51,10 @@ public:
      * @brief Propagate input through neural network.
      *
      * @param activations 2D array containing the activations of each layer in network. the first array will contain the
-     *                    input to the network and last array will contain the ouput values once input propagates.
-     * @return Array of floats containing neuron activation of output layer.
+     *                    input to the network and last array will contain the ouput values once input propagates. After
+     *                    propagation, all activations are stored in the activations array.
      */
-    float* propagate(float** activations) {
+    void propagate(float** activations) {
         /**
          *?                         ==================================================
          *?                                       🛈 How propagation works
@@ -73,11 +73,7 @@ public:
         for (int x = 0; x < layers.size(); x++) {
             layers[x + 1].propagate(activations[x], activations[x + 1]);
         }
-
-
-        return NULL;
     }
-
 
     // Clean up
 
