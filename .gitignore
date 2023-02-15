@@ -1,3 +1,7 @@
 .vscode/
 a
 build/
+training_data/test_images.csv
+training_data/test_labels.csv
+training_data/train_images.csv
+training_data/train_labels.csv
