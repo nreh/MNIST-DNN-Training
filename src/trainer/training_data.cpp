@@ -119,6 +119,16 @@ public:
     }
 
     /**
+     * @brief Throws error if specified file stream is NULL. We have a separate function for this incase we want to add
+     *        additional logic and to keep wording between errors the same.
+     */
+    void verify_file_open(ifstream* filestream, string type) {
+        if (filestream == NULL) {
+            throw invalid_function_call(type + " file has not been opened for reading");
+        }
+    }
+
+    /**
      * @brief Get the next training batch from training data file
      *
      * @param data 2-D array that training batch will be written to. Should already be initialized.
@@ -127,6 +137,8 @@ public:
      * @return Array containing training batch obtained from file
      */
     void get_next_training_data_batch(float** data, int batch_size) {
+        verify_file_open(training_data_file, "Training data");
+
         for (int x = 0; x < batch_size; x++) {
             string record;
             getline(*training_data_file, record);
@@ -143,9 +155,11 @@ public:
      * @return Array containing training batch obtained from file
      */
     void get_next_training_labels_batch(float** data, int batch_size) {
+        verify_file_open(training_labels_file, "Training labels");
+
         for (int x = 0; x < batch_size; x++) {
             string record;
-            getline(*training_data_file, record);
+            getline(*training_labels_file, record);
             parse_record(record, data[x]);
         }
     }
@@ -159,6 +173,8 @@ public:
      * @return Array containing training batch obtained from file
      */
     void get_next_testing_data_batch(float** data, int batch_size) {
+        verify_file_open(test_data_file, "Testing data");
+
         for (int x = 0; x < batch_size; x++) {
             string record;
             getline(*test_data_file, record);
@@ -175,6 +191,8 @@ public:
      * @return Array containing training batch obtained from file
      */
     void get_next_testing_labels_batch(float** data, int batch_size) {
+        verify_file_open(test_data_file, "Testing labels");
+
         for (int x = 0; x < batch_size; x++) {
             string record;
             getline(*test_labels_file, record);
