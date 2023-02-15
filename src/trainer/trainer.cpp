@@ -13,6 +13,16 @@ class Trainer {
 public:
 
     /**
+     * @brief Training batch size - default is 100
+     */
+    int batch_size = 100;
+
+    /**
+     * @brief First record of current batch being trained on
+     */
+    int current_record = 0;
+
+    /**
      * @brief Neural network instance this trainer is being created for
      */
     Network* network = NULL;
@@ -59,9 +69,18 @@ public:
     */
 
     /**
-     * @brief Training data is stored here
+     * @brief Instance of TrainingData object used for storing and reading from training data files
      */
     TrainingData training_data;
 
+    /**
+     * @brief Train next batch of training data
+     */
+    void train_batch() {
+        // read next batch of training data from file
+
+
+
+    }
 
 };
