@@ -11,6 +11,12 @@ using namespace std;
  *        data from files in batches
  */
 class TrainingData {
+private:
+    /**
+     * @brief Number of items in single batch
+     */
+    int batch_size = 100;
+
 public:
 
     // File readers
@@ -21,37 +27,92 @@ public:
     ifstream* test_labels_file = NULL;
 
     /**
-     * @brief Path to CSV file containing training inputs
+     * @brief Path to binary file containing training inputs
      */
-    string training_input_path = "";
+    string training_data_path = "";
 
     /**
-     * @brief Path to CSV file containing training labels
+     * @brief Path to binary file containing training labels
      */
     string training_labels_path = "";
 
     /**
-     * @brief Path to CSV file containing testing input
+     * @brief Path to binary file containing testing input
      */
-    string test_input_path = "";
+    string test_data_path = "";
 
     /**
-     * @brief Path to CSV file containing training labels
+     * @brief Path to binary file containing training labels
      */
     string test_labels_path = "";
+
+    /**
+     * @brief Index of next record in next batch to be trained on
+     */
+    int current_record = 0;
+
+    /**
+     * @brief Number of rows in input image to network
+     */
+    int32_t input_rows = 0;
+
+    /**
+     * @brief Number of columns in input image to network
+     */
+    int32_t input_columns = 0;
+
+    /**
+     * @brief Number of total items in the training data set
+     */
+    int32_t training_data_items_count = 0;
+
+    /**
+     * @brief Number of total items in the test data set
+     */
+    int32_t test_data_items_count = 0;
+
+    /**
+     * @brief 2-D array containing training batch data. Because batch size doesn't change during training, we initialize
+     *        this before hand so we don't need to reallocate memory every batch.
+     */
+    float** training_data_batch_buffer = NULL;
+
+    /**
+     * @brief 1-D array containing training batch labels. Because batch size doesn't change during training, we initialize
+     *        this before hand so we don't need to reallocate memory every batch.
+     */
+    unsigned char* training_labels_batch_buffer = NULL;
+
+    /**
+     * @brief 2-D array containing test data.
+     */
+    float** test_data_buffer = NULL;
+
+    /**
+     * @brief 1-D array containing test data labels.
+     */
+    unsigned char* test_labels_buffer = NULL;
 
     /**
      * @brief Set the training input file and verify its existence
      *
      * @param path
      */
-    void set_training_input_file(string path) {
-        ifstream file_reader(path);
+    void set_training_data_file(string path) {
+        training_data_path = path;
+        training_data_file = new ifstream(path, ios::in | ios::binary);
 
-        if (file_reader.fail()) {
-            SPDLOG_ERROR("Unable to open training input file '" + path + "'");
+        if (training_data_file->fail()) {
+            delete training_data_file;
+            training_data_file = NULL;
+            throw invalid_argument("Unable to open training input file '" + path + "'");
         } else {
-            training_input_path = path;
+            // succeeded in opening file, read metadata describing format of data,
+
+            training_data_file->seekg(4); // skip 'magic number'
+            training_data_file->read((char*)(&training_data_items_count), 4);
+            training_data_file->read((char*)(&input_rows), 4);
+            training_data_file->read((char*)(&input_columns), 4);
         }
     }
 
@@ -61,12 +122,18 @@ public:
      * @param path
      */
     void set_training_labels_file(string path) {
-        ifstream file_reader(path);
+        training_labels_path = path;
+        training_labels_file = new ifstream(path, ios::in | ios::binary);
 
-        if (file_reader.fail()) {
-            SPDLOG_ERROR("Unable to open training labels file '" + path + "'");
+        if (training_labels_file->fail()) {
+            delete training_labels_file;
+            training_labels_file = NULL;
+            throw invalid_argument("Unable to open training labels file '" + path + "'");
         } else {
-            training_labels_path = path;
+            // succeeded in opening file, read metadata describing format of data,
+
+            training_data_file->seekg(4); // skip 'magic number'
+            training_data_file->read((char*)(&training_data_items_count), 4);
         }
     }
 
@@ -75,13 +142,21 @@ public:
      *
      * @param path
      */
-    void set_test_input_file(string path) {
-        ifstream file_reader(path);
+    void set_test_data_file(string path) {
+        test_data_path = path;
+        test_data_file = new ifstream(path, ios::in | ios::binary);
 
-        if (file_reader.fail()) {
-            SPDLOG_ERROR("Unable to open test input file '" + path + "'");
+        if (test_data_file->fail()) {
+            delete test_data_file;
+            test_data_file = NULL;
+            throw invalid_argument("Unable to open test data file '" + path + "'");
         } else {
-            test_input_path = path;
+            // succeeded in opening file, read metadata describing format of data,
+
+            training_data_file->seekg(4); // skip 'magic number'
+            training_data_file->read((char*)(&test_data_items_count), 4);
+            training_data_file->read((char*)(&input_rows), 4);
+            training_data_file->read((char*)(&input_columns), 4);
         }
     }
 
@@ -91,30 +166,18 @@ public:
      * @param path
      */
     void set_test_labels_file(string path) {
-        ifstream file_reader(path);
+        test_labels_path = path;
+        test_labels_file = new ifstream(path, ios::in | ios::binary);
 
-        if (file_reader.fail()) {
-            SPDLOG_ERROR("Unable to open test labels file '" + path + "'");
+        if (test_labels_file->fail()) {
+            delete test_labels_file;
+            test_labels_file = NULL;
+            throw invalid_argument("Unable to open test labels file '" + path + "'");
         } else {
-            test_labels_path = path;
-        }
-    }
+            // succeeded in opening file, read metadata describing format of data,
 
-    /**
-     * @brief Split string by comma and parse floats into destination array
-     *
-     * @param record Training record to parse
-     * @param destination Destination array to write values into - should already by initialized
-     */
-    void parse_record(string record, float* destination) {
-        stringstream stream(record);
-
-        int i = 0;
-        while (stream.good()) {
-            string temp;
-            getline(stream, temp, ',');
-            destination[i] = stof(temp);
-            i += 1;
+            training_data_file->seekg(4); // skip 'magic number'
+            training_data_file->read((char*)(&test_data_items_count), 4);
         }
     }
 
@@ -124,7 +187,9 @@ public:
      */
     void verify_file_open(ifstream* filestream, string type) {
         if (filestream == NULL) {
-            throw invalid_function_call(type + " file has not been opened for reading");
+            throw invalid_function_call(
+                type + " file has not been opened for reading. Open file using setter functions in TrainingData class."
+            );
         }
     }
 
@@ -132,17 +197,19 @@ public:
      * @brief Get the next training batch from training data file
      *
      * @param data 2-D array that training batch will be written to. Should already be initialized.
-     * @param batch_size How many training items to read from file
      *
      * @return Array containing training batch obtained from file
      */
-    void get_next_training_data_batch(float** data, int batch_size) {
+    void get_next_training_data_batch(float** data) {
         verify_file_open(training_data_file, "Training data");
 
+        int bytes_per_item = input_rows * input_columns;
+
         for (int x = 0; x < batch_size; x++) {
-            string record;
-            getline(*training_data_file, record);
-            parse_record(record, data[x]);
+            for (int y = 0; y < bytes_per_item; y++) {
+                training_data_file->read((char*)(&training_data_batch_buffer[x][y]), 1);
+                current_record++;
+            }
         }
     }
 
@@ -158,50 +225,44 @@ public:
         verify_file_open(training_labels_file, "Training labels");
 
         for (int x = 0; x < batch_size; x++) {
-            string record;
-            getline(*training_labels_file, record);
-            parse_record(record, data[x]);
+            training_labels_file->read((char*)(&training_labels_batch_buffer[x]), 1);
         }
     }
 
     /**
-     * @brief Get the next testing batch from training data file
+     * @brief Get the testing data from file
      *
-     * @param data 2-D array that training batch will be written to. Should already be initialized.
-     * @param batch_size How many training items to read from file
-     *
-     * @return Array containing training batch obtained from file
+     * @param data 2-D array that testing data will be written to. Should already be initialized.
      */
-    void get_next_testing_data_batch(float** data, int batch_size) {
-        verify_file_open(test_data_file, "Testing data");
+    void get_test_data(float** data) {
+        verify_file_open(test_data_file, "Test data");
+
+        int bytes_per_item = input_rows * input_columns;
 
         for (int x = 0; x < batch_size; x++) {
-            string record;
-            getline(*test_data_file, record);
-            parse_record(record, data[x]);
+            for (int y = 0; y < bytes_per_item; y++) {
+                test_data_file->read((char*)(&test_data_buffer[x][y]), 1);
+            }
         }
     }
 
     /**
-     * @brief Get the next testing labels batch from training labels data file
+     * @brief Get testing labels from file
      *
-     * @param data 2-D array that training batch will be written to. Should already be initialized.
-     * @param batch_size How many training items to read from file
-     *
-     * @return Array containing training batch obtained from file
+     * @param data 2-D array that items will be written to. Should already be initialized.
+     * @param item_count How many items to read from file
      */
-    void get_next_testing_labels_batch(float** data, int batch_size) {
-        verify_file_open(test_data_file, "Testing labels");
+    void get_test_labels(float** data) {
+        verify_file_open(test_data_file, "Test labels");
 
         for (int x = 0; x < batch_size; x++) {
-            string record;
-            getline(*test_labels_file, record);
-            parse_record(record, data[x]);
+            test_labels_file->read((char*)(&test_labels_buffer[x]), 1);
         }
     }
 
     ~TrainingData() {
         delete training_data_file, training_labels_file, test_data_file, test_labels_file;
+        delete[] test_data_buffer, test_labels_buffer, training_data_batch_buffer, training_labels_batch_buffer;
     }
 
 };

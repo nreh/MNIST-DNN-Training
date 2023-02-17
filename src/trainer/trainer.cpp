@@ -8,24 +8,21 @@
 #include "../config.h"
 #include "../network.cpp"
 #include "../logging.h"
+#include "../exceptions.h"
 
 class Trainer {
-public:
-
+private:
     /**
      * @brief Training batch size - default is 100
      */
     int batch_size = 100;
 
     /**
-     * @brief First record of current batch being trained on
-     */
-    int current_record = 0;
-
-    /**
      * @brief Neural network instance this trainer is being created for
      */
     Network* network = NULL;
+
+public:
 
     /**
      * @brief Create a new trainer object
@@ -38,6 +35,10 @@ public:
      * @param network Network trainer is being created for
      */
     Trainer(Network& network) {
+        this->network = &network;
+    }
+
+    void setNetwork(Network& network) {
         this->network = &network;
     }
 
@@ -77,8 +78,36 @@ public:
      * @brief Train next batch of training data
      */
     void train_batch() {
-        // read next batch of training data from file
+        if (network == NULL) {
+            throw invalid_function_call("Trainer does not have any network to train");
+        }
 
+        // read next batch of training data from file
+        // training_data.get_next_training_data_batch(training_data_batch_buffer, batch_size);
+
+        //todo: implement backpropagation
+    }
+
+    /**
+     * @brief Propagate training data through network and return accuracy
+     */
+    void test_network() {
+
+        if (network == NULL) {
+            throw invalid_function_call("Trainer does not have any network to train");
+        }
+
+        // 2-d array that will store our activations,
+        float** activations_per_layer = new float* [network->layers.size()];
+
+        for (int x = 0; x < network->layers.size(); x++) {
+            activations_per_layer[x] = new float[network->layers[x].size];
+        }
+
+        // first layer activations should be test input,
+        for (int x = 0; x < network->layers[0].size; x++) {
+            activations_per_layer[0][x] = training_data.test_data_buffer[0][x];
+        }
 
 
     }
