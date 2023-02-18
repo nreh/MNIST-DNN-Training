@@ -48,11 +48,13 @@ public:
      * @param size Number of neurons in this layer.
      */
     Layer(int size) {
+        this->size = size;
 
         // no weights or biases for input layer
         weights = NULL;
         biases = NULL;
 
+        SPDLOG_DEBUG("Created input layer of size " + to_string(size));
     }
 
     /**
@@ -95,13 +97,15 @@ public:
             biases[x] = distr(engine);
         }
 
+        SPDLOG_DEBUG("Created hidden/output layer of size " + to_string(size));
     }
 
     /**
      * @brief Propagate data through layer and output result to a destination array.
      *
      * @param in Input values to propagate through. Size is equal to previous_layer_size.
-     * @param out Destination array to output result to. Size is equal to this layer size.
+     * @param out Destination array to output result to. Size is equal to this layer size. Should already be allocated and
+     *            have input layer values set as well as 0s for every other layer.
      */
     void propagate(float* in, float* out) {
 
@@ -112,15 +116,37 @@ public:
             throw invalid_function_call("The propagate function cannot be called on the input layer.");
         }
 
-        // this is now done by calling function for the sake of cache efficiency (I... think... 😕)
-        // // out = new float[size]();
-
+        // // this is now done by calling function for the sake of cache efficiency (I... think... 😕)
         for (int x = 0; x < previous_layer_size; x++) {
             dot_product(in[x], weights[x], out, size);
         }
 
+        // apply activation function,
+        //! for testing we're using RELU for all layers,
+        for (int x = 0; x < size; x++) {
+            out[x] += biases[x];
+
+            if (out[x] < 0) {
+                out[x] = 0;
+            }
+        }
+
     }
 
-    ~Layer() { }
+    ~Layer() {
+
+        // the input layer has no biases or weights to delete
+        if (layer_index > 0) {
+            SPDLOG_DEBUG("Deleting weights/biases for layer " + to_string(layer_index));
+
+            delete[] biases;
+
+            for (int x = 0; x < previous_layer_size; x++) {
+                delete[] weights[x];
+            }
+            delete[] weights;
+        }
+
+    }
 
 };

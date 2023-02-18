@@ -20,7 +20,7 @@ public:
     /**
      * List of all layers in network
      */
-    vector<Layer> layers;
+    vector<Layer*> layers;
 
     /**
      * @brief Construct a new Neural Network
@@ -37,11 +37,11 @@ public:
         }
 
         // first create the input layer,
-        layers.push_back(Layer(layer_sizes[0]));
+        layers.push_back(new Layer(layer_sizes[0]));
 
         // now create hidden and ouput layers,
         for (int x = 1; x < num_layers; x++) {
-            layers.push_back(Layer(layer_sizes[x], layer_sizes[x - 1], x));
+            layers.push_back(new Layer(layer_sizes[x], layer_sizes[x - 1], x));
         }
 
         SPDLOG_DEBUG("Created network with {0} layers", num_layers);
@@ -72,15 +72,18 @@ public:
          *
         */
 
-        for (int x = 0; x < layers.size(); x++) {
-            layers[x + 1].propagate(activations[x], activations[x + 1]);
+        for (int x = 1; x < layers.size(); x++) {
+            layers[x]->propagate(activations[x - 1], activations[x]);
         }
     }
 
     // Clean up
 
     ~Network() {
-        layers.clear();
+        for (int x = 0; x < layers.size();x++) {
+            delete layers[x];
+        }
+
         SPDLOG_DEBUG("Deleted network");
     }
 

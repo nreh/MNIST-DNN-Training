@@ -90,26 +90,69 @@ public:
 
     /**
      * @brief Propagate training data through network and return accuracy
+     *
+     * @return Accuracy (ex, 0.45 is 45% accuracy)
      */
-    void test_network() {
+    float test_network() {
+
+        SPDLOG_INFO("Testing neural network on " + to_string(training_data.test_data_items_count) + " test records...");
 
         if (network == NULL) {
-            throw invalid_function_call("Trainer does not have any network to train");
+            throw invalid_function_call("Trainer does not have any network to test on");
         }
 
         // 2-d array that will store our activations,
         float** activations_per_layer = new float* [network->layers.size()];
 
         for (int x = 0; x < network->layers.size(); x++) {
-            activations_per_layer[x] = new float[network->layers[x].size];
+            activations_per_layer[x] = new float[network->layers[x]->size];
         }
 
-        // first layer activations should be test input,
-        for (int x = 0; x < network->layers[0].size; x++) {
-            activations_per_layer[0][x] = training_data.test_data_buffer[0][x];
+        int correct_guesses = 0; // number of test input that resulted in correct guesses
+
+        // for each test item
+        for (int t = 0; t < training_data.test_data_items_count; t++) {
+            // first layer activations should be test input,
+            for (int x = 0; x < network->layers[0]->size; x++) {
+                activations_per_layer[0][x] = training_data.test_data_buffer[t][x];
+            }
+
+            // initialize hidden & output layer activations to zero
+            for (int x = 1; x < network->layers.size(); x++) {
+                for (int y = 0; y < network->layers[x]->size; y++) {
+                    activations_per_layer[x][y] = 0;
+                }
+            }
+
+            network->propagate(activations_per_layer);
+
+            // find index of neuron in output layer that has the highest activation,
+            const float* last_layer_activations = activations_per_layer[network->layers.size() - 1];
+
+            int index_of_highest_activation = 0;
+            float highest_activation = last_layer_activations[0];
+
+            // for each neuron in output layer...
+            for (int n = 1; n < network->layers[network->layers.size() - 1]->size; n++) {
+                if (last_layer_activations[n] > highest_activation) {
+                    highest_activation = last_layer_activations[n];
+                    index_of_highest_activation = n;
+                }
+            }
+
+            // if highest index equals test label, this guess was a success
+            if (training_data.test_labels_buffer[t] == index_of_highest_activation) {
+                // correct guess
+                correct_guesses++;
+            }
         }
 
+        for (int x = 0; x < network->layers.size(); x++) {
+            delete[] activations_per_layer[x];
+        }
+        delete[] activations_per_layer;
 
+        return correct_guesses / (float)training_data.test_data_items_count;
     }
 
 };
