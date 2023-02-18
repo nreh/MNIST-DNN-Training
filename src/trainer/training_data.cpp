@@ -3,6 +3,7 @@
 #include <sstream> // for parsing comma deliminated string
 
 #include "../logging.h"
+#include "../utils/endian.cpp"
 
 using namespace std;
 
@@ -99,6 +100,10 @@ public:
      * @param path
      */
     void set_training_data_file(string path) {
+        SPDLOG_INFO("Opening training data file '" + path + "' ...");
+
+        delete training_data_file;
+
         training_data_path = path;
         training_data_file = new ifstream(path, ios::in | ios::binary);
 
@@ -110,9 +115,29 @@ public:
             // succeeded in opening file, read metadata describing format of data,
 
             training_data_file->seekg(4); // skip 'magic number'
-            training_data_file->read((char*)(&training_data_items_count), 4);
-            training_data_file->read((char*)(&input_rows), 4);
-            training_data_file->read((char*)(&input_columns), 4);
+            training_data_items_count = file_read_big_endian_int32(*training_data_file);
+            input_rows = file_read_big_endian_int32(*training_data_file);
+            input_columns = file_read_big_endian_int32(*training_data_file);
+
+            SPDLOG_DEBUG(
+                "count = " + to_string(training_data_items_count) + ", rows,cols = " +
+                to_string(input_rows) + "," + to_string(input_columns)
+            );
+
+            // initialize training data bufferarray, first delete old one incase batch size or bytes-per-item changes
+            if (training_data_batch_buffer != NULL) {
+                for (int x = 0; x < batch_size; x++) {
+                    delete[] training_data_batch_buffer[x];
+                }
+                delete[] training_data_batch_buffer;
+            }
+
+            const int values_per_input = input_rows * input_columns;
+
+            training_data_batch_buffer = new float* [batch_size];
+            for (int x = 0; x < batch_size; x++) {
+                training_data_batch_buffer[x] = new float[values_per_input];
+            }
         }
     }
 
@@ -122,6 +147,10 @@ public:
      * @param path
      */
     void set_training_labels_file(string path) {
+        SPDLOG_INFO("Opening training labels file '" + path + "' ...");
+
+        delete training_labels_file;
+
         training_labels_path = path;
         training_labels_file = new ifstream(path, ios::in | ios::binary);
 
@@ -132,8 +161,19 @@ public:
         } else {
             // succeeded in opening file, read metadata describing format of data,
 
-            training_data_file->seekg(4); // skip 'magic number'
-            training_data_file->read((char*)(&training_data_items_count), 4);
+            training_labels_file->seekg(4); // skip 'magic number'
+            training_data_items_count = file_read_big_endian_int32(*training_data_file);
+
+            SPDLOG_DEBUG(
+                "count = " + to_string(training_data_items_count)
+            );
+
+            // initialize training labels bufferarray, first delete old one incase batch size changes
+            if (training_labels_batch_buffer != NULL) {
+                delete[] training_labels_batch_buffer;
+            }
+
+            training_labels_batch_buffer = new unsigned char[batch_size];
         }
     }
 
@@ -143,6 +183,10 @@ public:
      * @param path
      */
     void set_test_data_file(string path) {
+        SPDLOG_INFO("Opening test data file '" + path + "' ...");
+
+        delete test_data_file;
+
         test_data_path = path;
         test_data_file = new ifstream(path, ios::in | ios::binary);
 
@@ -152,11 +196,30 @@ public:
             throw invalid_argument("Unable to open test data file '" + path + "'");
         } else {
             // succeeded in opening file, read metadata describing format of data,
+            test_data_file->seekg(4); // skip 'magic number'
+            test_data_items_count = file_read_big_endian_int32(*test_data_file);
+            input_rows = file_read_big_endian_int32(*test_data_file);
+            input_columns = file_read_big_endian_int32(*test_data_file);
 
-            training_data_file->seekg(4); // skip 'magic number'
-            training_data_file->read((char*)(&test_data_items_count), 4);
-            training_data_file->read((char*)(&input_rows), 4);
-            training_data_file->read((char*)(&input_columns), 4);
+            SPDLOG_DEBUG(
+                "count = " + to_string(test_data_items_count) + ", rows,cols = " +
+                to_string(input_rows) + "," + to_string(input_columns)
+            );
+
+            // initialize test data bufferarray, first delete old one incase item count or bytes-per-item changes
+            if (test_data_buffer != NULL) {
+                for (int x = 0; x < test_data_items_count; x++) {
+                    delete[] test_data_buffer[x];
+                }
+                delete[] test_data_buffer;
+            }
+
+            const int values_per_input = input_rows * input_columns;
+
+            test_data_buffer = new float* [test_data_items_count];
+            for (int x = 0; x < test_data_items_count; x++) {
+                test_data_buffer[x] = new float[values_per_input];
+            }
         }
     }
 
@@ -166,6 +229,10 @@ public:
      * @param path
      */
     void set_test_labels_file(string path) {
+        SPDLOG_INFO("Opening test labels file '" + path + "' ...");
+
+        delete test_labels_file;
+
         test_labels_path = path;
         test_labels_file = new ifstream(path, ios::in | ios::binary);
 
@@ -176,8 +243,19 @@ public:
         } else {
             // succeeded in opening file, read metadata describing format of data,
 
-            training_data_file->seekg(4); // skip 'magic number'
-            training_data_file->read((char*)(&test_data_items_count), 4);
+            test_labels_file->seekg(4); // skip 'magic number'
+            test_data_items_count = file_read_big_endian_int32(*test_labels_file);
+
+            SPDLOG_DEBUG(
+                "count = " + to_string(test_data_items_count)
+            );
+
+            // initialize training labels bufferarray, first delete old one incase batch size changes
+            if (test_labels_buffer != NULL) {
+                delete[] test_labels_buffer;
+            }
+
+            test_labels_buffer = new unsigned char[test_data_items_count];
         }
     }
 
@@ -205,9 +283,12 @@ public:
 
         int bytes_per_item = input_rows * input_columns;
 
+        uint8_t temp; // temporarily stores byte to be converted to float  
+
         for (int x = 0; x < batch_size; x++) {
             for (int y = 0; y < bytes_per_item; y++) {
-                training_data_file->read((char*)(&training_data_batch_buffer[x][y]), 1);
+                training_data_file->read((char*)(&temp), 1);
+                training_data_batch_buffer[x][y] = temp;
                 current_record++;
             }
         }
@@ -231,38 +312,57 @@ public:
 
     /**
      * @brief Get the testing data from file
-     *
-     * @param data 2-D array that testing data will be written to. Should already be initialized.
      */
-    void get_test_data(float** data) {
+    void get_test_data() {
         verify_file_open(test_data_file, "Test data");
 
         int bytes_per_item = input_rows * input_columns;
 
-        for (int x = 0; x < batch_size; x++) {
+        uint8_t temp; // temporarily stores byte to be converted to float        
+
+        for (int x = 0; x < test_data_items_count; x++) {
             for (int y = 0; y < bytes_per_item; y++) {
-                test_data_file->read((char*)(&test_data_buffer[x][y]), 1);
+                test_data_file->read((char*)(&temp), 1);
+                test_data_buffer[x][y] = temp;
             }
         }
     }
 
     /**
      * @brief Get testing labels from file
-     *
-     * @param data 2-D array that items will be written to. Should already be initialized.
-     * @param item_count How many items to read from file
      */
-    void get_test_labels(float** data) {
+    void get_test_labels() {
         verify_file_open(test_data_file, "Test labels");
 
-        for (int x = 0; x < batch_size; x++) {
+        for (int x = 0; x < test_data_items_count; x++) {
             test_labels_file->read((char*)(&test_labels_buffer[x]), 1);
         }
     }
 
     ~TrainingData() {
-        delete training_data_file, training_labels_file, test_data_file, test_labels_file;
-        delete[] test_data_buffer, test_labels_buffer, training_data_batch_buffer, training_labels_batch_buffer;
+        delete training_data_file;
+        delete training_labels_file;
+        delete test_data_file;
+        delete test_labels_file;
+
+        if (training_data_batch_buffer != NULL) {
+            for (int x = 0; x < batch_size; x++) {
+                delete[] training_data_batch_buffer[x];
+            }
+        }
+        delete[] training_data_batch_buffer;
+
+        if (test_data_buffer != NULL) {
+            for (int x = 0; x < test_data_items_count; x++) {
+                delete[] test_data_buffer[x];
+            }
+        }
+        delete[] test_data_buffer;
+
+        delete[] test_labels_buffer;
+        delete[] training_labels_batch_buffer;
+
+        SPDLOG_DEBUG("Deleted trainer");
     }
 
 };
