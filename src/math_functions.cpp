@@ -3,7 +3,8 @@
  */
 
 class ActivationFunctions {
-
+public:
+    // σ(x) = x when x >= 0  &  σ(x) = 0 when x < 0
     static float RELU(float x) {
         if (x < 0) {
             return 0;
@@ -13,8 +14,26 @@ class ActivationFunctions {
     }
 
     static float sigmoid(float x) {
-        //todo: implement
-        return 0;
+        // we use fast sigmoid function:
+        return x / (1 + abs(x));
+    }
+
+};
+
+class ActivationFunctionGradients {
+public:
+    // σ′(x) = 1 when x >= 0  &  σ′(x) = 0 when x < 0
+    static float RELU_gradient(float x) {
+        if (x < 0) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+
+    static float sigmoid_gradient(float x) {
+        // we use fast sigmoid function:
+        return 1 / pow(abs(x) + 1, 2);
     }
 
 };

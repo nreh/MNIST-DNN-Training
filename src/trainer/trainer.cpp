@@ -13,16 +13,82 @@
 class Trainer {
 private:
     /**
-     * @brief Training batch size - default is 100
-     */
-    int batch_size = 100;
-
-    /**
      * @brief Neural network instance this trainer is being created for
      */
     Network* network = NULL;
 
+    // We don't want to reallocate this memory for every record trained, we do it once.
+
+    /**
+     * @brief 3-D array storing activation of each layer in network in every training batch.
+     */
+    float*** activations = NULL;
+
+    /**
+     * @brief 2D array containing the error for each layer in network EXCEPT for the input layer (The input layer has
+     *        no bias or weights so no weights/biases to train). Used for storing errors that are used for
+     *        backpropagation. For every training batch.
+     */
+    float*** error = NULL;
+
+    /**
+     * @brief 3D array containing the cost gradients of each weight in each layer (expect for input, which has no weights or
+     *        biases). The first dimension represents the layer, the second dimension represents a neuron in the layer, and
+     *        the third dimension are the weights from previous layer to the neuron. We only require one for all batches
+     *        because the calculated weight gradient will just be added together and divided by the batch size to obtain
+     *        the average weight_gradient for the entire training data batch
+     */
+    float*** weight_gradient = NULL;
+
+    /**
+     * @brief Store a copy of network layer sizes here incase the original network object is deleted.
+     *        this is to make sure we can still delete allocated memory to prevent leaks.
+     */
+    vector<int> layer_sizes;
+
 public:
+
+    float step_size = 0.005f;
+
+    void setNetwork(Network& network) {
+        this->network = &network;
+
+        // initialize the activations, error, and weight_gradient array:
+
+        /**
+         * TODO: Fix this pointer hell. One idea is to collapse 2-D & 3-D arrays into a single 1-D array
+         *       this should also be slightly faster
+         *       https://stackoverflow.com/questions/17259877/1d-or-2d-array-whats-faster
+        */
+
+        for (int l = 0; l < network.layers.size(); l++) {
+            layer_sizes.push_back(network.layers[l]->size);
+        }
+
+        activations = new float** [training_data.batch_size];
+        for (int b = 0; b < training_data.batch_size; b++) {
+            activations[b] = new float* [network.layers.size()];
+            for (int x = 0; x < network.layers.size(); x++) {
+                activations[b][x] = new float[network.layers[x]->size];
+            }
+        }
+
+        error = new float** [training_data.batch_size];
+        for (int b = 0; b < training_data.batch_size; b++) {
+            error[b] = new float* [network.layers.size() - 1];
+            for (int x = 0; x < network.layers.size() - 1; x++) {
+                error[b][x] = new float[network.layers[x + 1]->size];
+            }
+        }
+
+        weight_gradient = new float** [network.layers.size() - 1];
+        for (int l = 1; l < network.layers.size(); l++) {
+            weight_gradient[l - 1] = new float* [network.layers[l - 1]->size];
+            for (int x = 0; x < network.layers[l - 1]->size; x++) {
+                weight_gradient[l - 1][x] = new float[network.layers[l]->size];
+            }
+        }
+    }
 
     /**
      * @brief Create a new trainer object
@@ -35,11 +101,35 @@ public:
      * @param network Network trainer is being created for
      */
     Trainer(Network& network) {
-        this->network = &network;
+        setNetwork(network);
     }
 
-    void setNetwork(Network& network) {
-        this->network = &network;
+    ~Trainer() {
+        for (int b = 0; b < training_data.batch_size; b++) {
+            for (int x = 0; x < layer_sizes.size(); x++) {
+                delete[] activations[b][x];
+            }
+            delete[] activations[b];
+        }
+        delete[] activations;
+
+        for (int b = 0; b < training_data.batch_size; b++) {
+            for (int x = 0; x < layer_sizes.size() - 1; x++) {
+                delete[] error[b][x];
+            }
+            delete[] error[b];
+        }
+        delete[] error;
+
+        for (int l = 1; l < layer_sizes.size(); l++) {
+            for (int x = 0; x < layer_sizes[l - 1]; x++) {
+                delete[] weight_gradient[l - 1][x];
+            }
+            delete[] weight_gradient[l - 1];
+        }
+        delete[] weight_gradient;
+
+        SPDLOG_DEBUG("Deleted trainer");
     }
 
     /**
@@ -73,20 +163,6 @@ public:
      * @brief Instance of TrainingData object used for storing and reading from training data files
      */
     TrainingData training_data;
-
-    /**
-     * @brief Train next batch of training data
-     */
-    void train_batch() {
-        if (network == NULL) {
-            throw invalid_function_call("Trainer does not have any network to train");
-        }
-
-        // read next batch of training data from file
-        // training_data.get_next_training_data_batch(training_data_batch_buffer, batch_size);
-
-        //todo: implement backpropagation
-    }
 
     /**
      * @brief Propagate training data through network and return accuracy
@@ -145,6 +221,13 @@ public:
                 // correct guess
                 correct_guesses++;
             }
+
+            if (t == 0) {
+                // print last layer ouputs
+                for (int x = 0; x < layer_sizes[layer_sizes.size() - 1]; x++) {
+                    SPDLOG_DEBUG(to_string(x) + ": " + to_string(activations_per_layer[layer_sizes.size() - 1][x]));
+                }
+            }
         }
 
         for (int x = 0; x < network->layers.size(); x++) {
@@ -153,6 +236,111 @@ public:
         delete[] activations_per_layer;
 
         return correct_guesses / (float)training_data.test_data_items_count;
+    }
+
+    /**
+     * @brief Train the network on one epoch of training data. The neural network is given the training data in batches.
+     *        If there are N batches of training data, an epoch occurs when all N batches have been seen by the network once.
+     */
+    void train_epoch() {
+        if (network == NULL) {
+            throw invalid_function_call("Trainer does not have any network to train");
+        }
+
+        for (int x = 0; x < training_data.total_batch_count; x++) {
+            train_next_batch();
+        }
+    }
+
+    /**
+     * @brief Train the network on the next batch of training data. Note that the last batch may be smaller than batch size.
+     */
+    void train_next_batch() {
+        // SPDLOG_INFO("Training batch " + to_string(training_data.current_batch) + "/" +
+            // to_string(training_data.total_batch_count));
+
+        training_data.get_next_training_data_batch();
+        training_data.get_next_training_labels_batch();
+
+        int batch_size = training_data.batch_size;
+        if (training_data.current_batch == training_data.total_batch_count) {
+            // on the last batch so batch size will be different,
+            batch_size = training_data.training_data_items_count % batch_size;
+        }
+
+        // set all values to zero in activations and weight_gradient matrix.
+
+        for (int b = 0; b < training_data.batch_size; b++) {
+            for (int l = 0; l < network->layers.size(); l++) {
+                for (int x = 0; x < network->layers[l]->size; x++) {
+                    activations[b][l][x] = 0;
+                }
+            }
+        }
+
+        for (int l = 1; l < network->layers.size(); l++) {
+            for (int x = 0; x < network->layers[l - 1]->size; x++) {
+                for (int y = 0; y < network->layers[l]->size; y++) {
+                    weight_gradient[l - 1][x][y] = 0;
+                }
+            }
+        }
+
+
+
+        for (int x = 0; x < batch_size; x++) {
+            train_record(training_data.training_data_batch_buffer[x], training_data.training_labels_batch_buffer[x], x);
+        }
+
+        // weight gradients now contains the sum of weight gradients of all training records,
+        // dividing each gradient by the batch size gives us the average gradient vector of all
+        // training records in the batch. Now we update the weights and biases,
+
+        /**
+         * @brief The average weight gradient is dW/dC * (step_size / batch_size)
+         *        rather than calculating this everytime, we do it once here.
+         */
+        float coefficient = step_size / training_data.batch_size;
+
+        // first update weights
+        for (int l = 1; l < layer_sizes.size(); l++) {
+            for (int x = 0; x < layer_sizes[l - 1]; x++) {
+                for (int y = 0; y < layer_sizes[l]; y++) {
+                    network->layers[l]->weights[x][y] -= weight_gradient[l - 1][x][y] * coefficient;
+                }
+            }
+        }
+
+        // now update biases, we need to calculate average bias change for each neuron first
+        for (int l = 1; l < layer_sizes.size(); l++) {
+            for (int x = 0; x < layer_sizes[l]; x++) {
+                float average_error = 0;
+                for (int b = 0; b < training_data.batch_size; b++) {
+                    average_error += error[b][l - 1][x];
+                }
+                average_error /= training_data.batch_size;
+                network->layers[l]->biases[x] -= average_error * step_size;
+            }
+        }
+    }
+
+    /**
+     * @brief Train on a single record
+     *
+     * @param record Array containing input to network
+     * @param label Label for this record
+     * @param batch_record_index Index in record that this batch is part of
+     */
+    void train_record(float* record, unsigned char label, int batch_record_index) {
+        // load record into input layer
+        for (int x = 0; x < network->layers[0]->size; x++) {
+            activations[batch_record_index][0][x] = record[x];
+        }
+
+        network->propagate_backpropagate(
+            activations[batch_record_index], error[batch_record_index], weight_gradient,
+            label
+        );
     }
 
 };

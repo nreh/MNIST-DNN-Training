@@ -42,6 +42,16 @@ public:
      */
     int layer_index = 0;
 
+    enum Function {
+        RELU,
+        Sigmoid
+    };
+
+    /**
+     * @brief Activation function used by this layer
+     */
+    Function activation_function = Function::RELU;
+
     /**
      * @brief Construct a new input layer. This should only be the first layer of the Network.
      *
@@ -103,9 +113,9 @@ public:
     /**
      * @brief Propagate data through layer and output result to a destination array.
      *
-     * @param in Input values to propagate through. Size is equal to previous_layer_size.
-     * @param out Destination array to output result to. Size is equal to this layer size. Should already be allocated and
-     *            have input layer values set as well as 0s for every other layer.
+     * @param in Input values to propagate through (Previous layer activations). Size is equal to previous_layer_size.
+     * @param out Destination array to output final layer activations to (σ(z)). Size is equal to this layer size. Should
+     *            already be allocated and have input layer values set as well as 0s for every other layer.
      */
     void propagate(float* in, float* out) {
 
@@ -116,21 +126,83 @@ public:
             throw invalid_function_call("The propagate function cannot be called on the input layer.");
         }
 
-        // // this is now done by calling function for the sake of cache efficiency (I... think... 😕)
         for (int x = 0; x < previous_layer_size; x++) {
             dot_product(in[x], weights[x], out, size);
         }
 
         // apply activation function,
-        //! for testing we're using RELU for all layers,
-        for (int x = 0; x < size; x++) {
-            out[x] += biases[x];
 
-            if (out[x] < 0) {
-                out[x] = 0;
+
+        if (activation_function == RELU) {
+            for (int x = 0; x < size; x++) {
+                out[x] += biases[x];
+                out[x] = ActivationFunctions::RELU(out[x]);
+            }
+        } else if (activation_function == Sigmoid) {
+            for (int x = 0; x < size; x++) {
+                out[x] += biases[x];
+                out[x] = ActivationFunctions::sigmoid(out[x]);
             }
         }
 
+    }
+
+    /**
+     * @brief Propagate input through layer and store activations in output array while calculating output gradient
+     *        that is used for calculating the error used for backpropagation.
+     *
+     * @param in Input values to propagate through (Previous layer activations). Size is equal to previous_layer_size.
+     *
+     * @param out Destination array to output final layer activations to (σ(z)). Size is equal to this layer size. Should
+     *            already be allocated and have input layer values set as well as 0s for every other layer.
+     *
+     * @param gradient_out Destination array to write the gradient of activation function given input from previous layer
+     *                     (σ′(z)). Size is equal to this layer size. This is later used when backpropagating to calculate
+     *                     the error for each layer/neuron in the network.
+     */
+    void propagate_backpropagate(float* in, float* out, float* gradient_out) {
+
+        // matrix multiplication of in and weight-matrix
+
+        // the input layer cannot have propagate called on it
+        if (layer_index == 0) {
+            throw invalid_function_call("The propagate function cannot be called on the input layer.");
+        }
+
+        for (int x = 0; x < previous_layer_size; x++) {
+            dot_product(in[x], weights[x], out, size);
+        }
+
+        // for each neuron in this layer, copy the weight activations from previous layer + bias into the weight & bias
+        // gradient
+        for (int x = 0; x < previous_layer_size; x++) {
+            dot_product(in[x], weights[x], out, size);
+        }
+
+        // Before overwriting out[] array by running them through the activation funcition, we calculate and write the
+        // activation funciton gradient to out_gradient[]. (out_gradient = σ′(z))
+        if (activation_function == RELU) {
+            for (int x = 0; x < size; x++) {
+                out[x] += biases[x];
+                gradient_out[x] = ActivationFunctionGradients::RELU_gradient(out[x]);
+            }
+        } else if (activation_function == Sigmoid) {
+            for (int x = 0; x < size; x++) {
+                out[x] += biases[x];
+                gradient_out[x] = ActivationFunctionGradients::sigmoid_gradient(out[x]);
+            }
+        }
+
+        // apply activation function,
+        if (activation_function == RELU) {
+            for (int x = 0; x < size; x++) {
+                out[x] = ActivationFunctions::RELU(out[x]);
+            }
+        } else if (activation_function == Sigmoid) {
+            for (int x = 0; x < size; x++) {
+                out[x] = ActivationFunctions::sigmoid(out[x]);
+            }
+        }
     }
 
     ~Layer() {

@@ -13,12 +13,13 @@ using namespace std;
  */
 class TrainingData {
 private:
+
+public:
+
     /**
      * @brief Number of items in single batch
      */
-    int batch_size = 100;
-
-public:
+    int batch_size = 500;
 
     // File readers
 
@@ -73,6 +74,16 @@ public:
     int32_t test_data_items_count = 0;
 
     /**
+     * @brief Index of current batch being trained on
+     */
+    int current_batch = 0;
+
+    /**
+     * @brief Total batches in training data set
+     */
+    int total_batch_count = 0;
+
+    /**
      * @brief 2-D array containing training batch data. Because batch size doesn't change during training, we initialize
      *        this before hand so we don't need to reallocate memory every batch.
      */
@@ -119,6 +130,8 @@ public:
             input_rows = file_read_big_endian_int32(*training_data_file);
             input_columns = file_read_big_endian_int32(*training_data_file);
 
+            total_batch_count = (int)ceil(training_data_items_count / (float)batch_size);
+
             SPDLOG_DEBUG(
                 "count = " + to_string(training_data_items_count) + ", rows,cols = " +
                 to_string(input_rows) + "," + to_string(input_columns)
@@ -162,7 +175,7 @@ public:
             // succeeded in opening file, read metadata describing format of data,
 
             training_labels_file->seekg(4); // skip 'magic number'
-            training_data_items_count = file_read_big_endian_int32(*training_data_file);
+            training_data_items_count = file_read_big_endian_int32(*training_labels_file);
 
             SPDLOG_DEBUG(
                 "count = " + to_string(training_data_items_count)
@@ -273,12 +286,8 @@ public:
 
     /**
      * @brief Get the next training batch from training data file
-     *
-     * @param data 2-D array that training batch will be written to. Should already be initialized.
-     *
-     * @return Array containing training batch obtained from file
      */
-    void get_next_training_data_batch(float** data) {
+    void get_next_training_data_batch() {
         verify_file_open(training_data_file, "Training data");
 
         int bytes_per_item = input_rows * input_columns;
@@ -288,25 +297,28 @@ public:
         for (int x = 0; x < batch_size; x++) {
             for (int y = 0; y < bytes_per_item; y++) {
                 training_data_file->read((char*)(&temp), 1);
-                training_data_batch_buffer[x][y] = temp;
+                training_data_batch_buffer[x][y] = temp / 255.0f; // normalize input between 0 and 1
                 current_record++;
             }
+            if (training_data_file->eof()) {
+                break;
+            }
         }
+
+        current_batch++;
     }
 
     /**
      * @brief Get the next training labels batch from training labels data file
-     *
-     * @param data 2-D array that training batch will be written to. Should already be initialized.
-     * @param batch_size How many training items to read from file
-     *
-     * @return Array containing training batch obtained from file
      */
-    void get_next_training_labels_batch(float** data, int batch_size) {
+    void get_next_training_labels_batch() {
         verify_file_open(training_labels_file, "Training labels");
 
         for (int x = 0; x < batch_size; x++) {
             training_labels_file->read((char*)(&training_labels_batch_buffer[x]), 1);
+            if (training_labels_file->eof()) {
+                break;
+            }
         }
     }
 
@@ -323,7 +335,7 @@ public:
         for (int x = 0; x < test_data_items_count; x++) {
             for (int y = 0; y < bytes_per_item; y++) {
                 test_data_file->read((char*)(&temp), 1);
-                test_data_buffer[x][y] = temp;
+                test_data_buffer[x][y] = temp / 255.0f; // normalize input between 0 and 1
             }
         }
     }
@@ -362,7 +374,7 @@ public:
         delete[] test_labels_buffer;
         delete[] training_labels_batch_buffer;
 
-        SPDLOG_DEBUG("Deleted trainer");
+        SPDLOG_DEBUG("Deleted training data");
     }
 
 };
