@@ -1,0 +1,3 @@
+BraceBreakingStyle: BS_Linux
+IndentWidth: 4
+ColumnLimit: 125
