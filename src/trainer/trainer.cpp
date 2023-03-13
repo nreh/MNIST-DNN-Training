@@ -1,14 +1,21 @@
 #pragma once
 
-#include <string>
+#include <filesystem>
 #include <fstream>
+#include <string>
+
+// for generating current datetime
+#include "../utils/datetime.cpp"
+
+// for generating name of log file
+#include "../utils/file.cpp"
 
 #include "training_data.cpp"
 
 #include "../config.h"
-#include "../network.cpp"
-#include "../logging.h"
 #include "../exceptions.h"
+#include "../logging.h"
+#include "../network.cpp"
 
 class Trainer {
 private:
@@ -36,7 +43,7 @@ private:
      *        biases). The first dimension represents the layer, the second dimension represents a neuron in the layer, and
      *        the third dimension are the weights from previous layer to the neuron. We only require one for all batches
      *        because the calculated weight gradient will just be added together and divided by the batch size to obtain
-     *        the average weight_gradient for the entire training data batch
+     *        the average weight_gradient for the entire training data batch.
      */
     float*** weight_gradient = NULL;
 
@@ -46,9 +53,21 @@ private:
      */
     vector<int> layer_sizes;
 
-public:
+    /**
+     * @brief Log file currently being written to in this training run.
+     */
+    string log_file;
 
+public:
     float step_size = 0.005f;
+
+    /**
+     * @brief As the network is trained, its accuracy is written to a log file. This variable defines the folder that
+     * contains the log file.
+     *
+     * Default is './log'
+     */
+    string training_logs_output_folder = "./log";
 
     void setNetwork(Network& network) {
         this->network = &network;
@@ -59,7 +78,7 @@ public:
          * TODO: Fix this pointer hell. One idea is to collapse 2-D & 3-D arrays into a single 1-D array
          *       this should also be slightly faster
          *       https://stackoverflow.com/questions/17259877/1d-or-2d-array-whats-faster
-        */
+         */
 
         for (int l = 0; l < network.layers.size(); l++) {
             layer_sizes.push_back(network.layers[l]->size);
@@ -100,9 +119,7 @@ public:
      *
      * @param network Network trainer is being created for
      */
-    Trainer(Network& network) {
-        setNetwork(network);
-    }
+    Trainer(Network& network) { setNetwork(network); }
 
     ~Trainer() {
         for (int b = 0; b < training_data.batch_size; b++) {
@@ -133,35 +150,76 @@ public:
     }
 
     /**
+     * @brief Create the log file that will be written to using `write_to_log_file()`
+     */
+    void create_log_file() {
+        // first we need to generate a name for the file,
+        string filename = "log_";
+        filename += get_current_datetime();
+        filename += ".csv";
+
+        filesystem::path dest(training_logs_output_folder);
+        dest.append(filename);
+
+        filename = get_unique_filename(dest.string());
+
+        SPDLOG_INFO("Writing training stats to " + dest.string());
+
+        ofstream writer(filename, ios_base::openmode::_S_trunc);
+
+        if (!writer.good()) {
+            SPDLOG_WARN("Unable to create log file, are you sure the target folder (" + training_logs_output_folder +
+                ") exists?");
+        }
+
+        log_file = filename;
+
+        // write some initial data to file
+
+        // configuration headers
+        writer << "# Training Log File" << endl;
+        writer << "# ******************************************" << endl;
+        writer << "# Generated On: " << get_current_datetime() << endl;
+        writer << "# Training Data File: " << training_data.training_data_path << endl;
+        writer << "# Training Labels File: " << training_data.training_labels_path << endl;
+        writer << "# Test Data File: " << training_data.test_data_path << endl;
+        writer << "# Test Labels File: " << training_data.test_labels_path << endl;
+        writer << "# Batch Size: " << training_data.batch_size << endl;
+        writer << "# Total batches in training data: " << training_data.total_batch_count << endl;
+        writer << "# Total records in training data " << training_data.training_data_items_count << endl;
+        writer << "# Total records in test data " << training_data.test_data_items_count << endl;
+
+        writer << endl;
+
+        // write csv headers
+        writer << "epoch,accuracy" << endl;
+    }
+
+    /**
+     * @brief Append to log file. Make sure to call `create_log_file()` before this function.
+     */
+    void write_to_log_file(int epoch, float accuracy) {
+        ofstream writer(log_file, ios_base::openmode::_S_app);
+        writer << epoch << "," << accuracy << endl;
+    }
+
+    /**
      *?                             ==================================================
      *?                                               🛈 Training Data
      *?                             ==================================================
      *
-     * Training data comprises of two files, input and labels stored in CSV files.
-     *
-     * The input CSV file contains the inputs to the neural network and each line contains N comma separated floats where N
-     * is equal to the number of neurons in the input layer. One record for per line.
-     *
-     * For example, if training on the MNIST database, one record could be a list of 784 floats (28px * 28px = 784 px²)
-     * representing the number 3.
-     *
-     * The label CSV files contains the correct output layer activations for the given input. Each line contains N comma
-     * separated floats where N is the number of neurons in the output layer.
-     *
-     * So for our MNIST database example, the input data representing a 3 would have the following training label,
-     *
-     *      0,0,0,1,0,0,0,0,0,0
-     *
-     * Each of the 10 neurons in the output layer corresponding to a digit 0-9, with the 4th one representing the number 3.
+     * Training data comprises of two files, input and labels stored in binary files.
      *
      * Test data is formatted the same as training data and is used for determining how accurate the neural network is on
      * data not in the training set. If the neural network performs well on training data and unwell on test data, that
      * could mean we are over fitting the model.
-    */
-
-    /**
-     * @brief Instance of TrainingData object used for storing and reading from training data files
+     *
+     * TODO: Expand on this
      */
+
+     /**
+      * @brief Instance of TrainingData object used for storing and reading from training data files
+      */
     TrainingData training_data;
 
     /**
@@ -227,6 +285,7 @@ public:
                 for (int x = 0; x < layer_sizes[layer_sizes.size() - 1]; x++) {
                     SPDLOG_DEBUG(to_string(x) + ": " + to_string(activations_per_layer[layer_sizes.size() - 1][x]));
                 }
+                SPDLOG_DEBUG("Label is " + to_string(training_data.test_labels_buffer[t]));
             }
         }
 
@@ -236,6 +295,28 @@ public:
         delete[] activations_per_layer;
 
         return correct_guesses / (float)training_data.test_data_items_count;
+    }
+
+    /**
+     * @brief Train neural network for some number of epochs while writing accuracy to a log file.
+     *
+     * @param epochs Number of epochs to train for
+     */
+    void train(int epochs) {
+        SPDLOG_INFO("Training network for " + to_string(epochs) + " epochs");
+
+        create_log_file();
+
+        for (int x = 0; x <= epochs; x++) {
+            float accuracy = test_network();
+            SPDLOG_INFO("Accuracy: " + to_string(accuracy * 100.0f) + "%");
+
+            write_to_log_file(x, accuracy);
+
+            SPDLOG_INFO("Training epoch " + x);
+
+            train_epoch();
+        }
     }
 
     /**
@@ -257,7 +338,7 @@ public:
      */
     void train_next_batch() {
         // SPDLOG_INFO("Training batch " + to_string(training_data.current_batch) + "/" +
-            // to_string(training_data.total_batch_count));
+        // to_string(training_data.total_batch_count));
 
         training_data.get_next_training_data_batch();
         training_data.get_next_training_labels_batch();
@@ -285,8 +366,6 @@ public:
                 }
             }
         }
-
-
 
         for (int x = 0; x < batch_size; x++) {
             train_record(training_data.training_data_batch_buffer[x], training_data.training_labels_batch_buffer[x], x);
@@ -337,10 +416,6 @@ public:
             activations[batch_record_index][0][x] = record[x];
         }
 
-        network->propagate_backpropagate(
-            activations[batch_record_index], error[batch_record_index], weight_gradient,
-            label
-        );
+        network->propagate_backpropagate(activations[batch_record_index], error[batch_record_index], weight_gradient, label);
     }
-
 };

@@ -1,10 +1,10 @@
-#include <vector>
 #include <random>
+#include <vector>
 
 #include "config.h"
-#include "neuron.cpp"
-#include "math_functions.cpp"
 #include "exceptions.h"
+#include "math_functions.cpp"
+#include "neuron.cpp"
 
 using namespace std;
 
@@ -12,23 +12,22 @@ using namespace std;
  * @brief A layer in the neural network.
  */
 class Layer {
-public:
-
+  public:
     /**
      * Contains biases for every neuron in the layer.
      */
-    float* biases;
+    float *biases;
 
     /**
      * 2-D array containing weights for each neuron in the previous layer to each neuron in the current layer.
      *
      * * This is the Weight-Matrix *
      */
-    float** weights;
+    float **weights;
 
     /**
      * @brief Number of neurons in previous layer. If this is the first layer (input layer), then this
-    *         is the number of input values.
+     *         is the number of input values.
      */
     int previous_layer_size = 0;
 
@@ -42,10 +41,7 @@ public:
      */
     int layer_index = 0;
 
-    enum Function {
-        RELU,
-        Sigmoid
-    };
+    enum Function { RELU, Sigmoid };
 
     /**
      * @brief Activation function used by this layer
@@ -74,8 +70,9 @@ public:
      * @param previous_layer_size Number of neurons in previous layer. If this is the first layer (input layer), then this
      *                            is the number of input values.
      * @param layer_index Index in the neural network that this layer is in.
+     * @param engine Random engine used for generating random weights and biases
      */
-    Layer(int size, int previous_layer_size, int layer_index) {
+    Layer(int size, int previous_layer_size, int layer_index, default_random_engine engine) {
 
         this->size = size;
         this->previous_layer_size = previous_layer_size;
@@ -83,14 +80,15 @@ public:
 
         // initialize weight matrix
 
-        weights = new float* [previous_layer_size];
+        weights = new float *[previous_layer_size];
         for (int x = 0; x < previous_layer_size; x++) {
             weights[x] = new float[size];
         }
 
         // randomly initialize weights on a normal distribution
 
-        default_random_engine engine(time(0));
+        // random engine is now passed from Network
+        // // default_random_engine engine(time(0));
         normal_distribution<float> distr(INIT_NORMAL_MEAN, INIT_NORMAL_STDDEV);
 
         for (int x = 0; x < previous_layer_size; x++) {
@@ -117,7 +115,7 @@ public:
      * @param out Destination array to output final layer activations to (σ(z)). Size is equal to this layer size. Should
      *            already be allocated and have input layer values set as well as 0s for every other layer.
      */
-    void propagate(float* in, float* out) {
+    void propagate(float *in, float *out) {
 
         // matrix multiplication of in and weight-matrix
 
@@ -132,7 +130,6 @@ public:
 
         // apply activation function,
 
-
         if (activation_function == RELU) {
             for (int x = 0; x < size; x++) {
                 out[x] += biases[x];
@@ -144,7 +141,6 @@ public:
                 out[x] = ActivationFunctions::sigmoid(out[x]);
             }
         }
-
     }
 
     /**
@@ -160,7 +156,7 @@ public:
      *                     (σ′(z)). Size is equal to this layer size. This is later used when backpropagating to calculate
      *                     the error for each layer/neuron in the network.
      */
-    void propagate_backpropagate(float* in, float* out, float* gradient_out) {
+    void propagate_backpropagate(float *in, float *out, float *gradient_out) {
 
         // matrix multiplication of in and weight-matrix
 
@@ -218,7 +214,5 @@ public:
             }
             delete[] weights;
         }
-
     }
-
 };

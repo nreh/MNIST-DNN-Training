@@ -1,6 +1,6 @@
-#include <string>
 #include <fstream>
 #include <sstream> // for parsing comma deliminated string
+#include <string>
 
 #include "../logging.h"
 #include "../utils/endian.cpp"
@@ -12,21 +12,19 @@ using namespace std;
  *        data from files in batches
  */
 class TrainingData {
-private:
-
-public:
-
+  private:
+  public:
     /**
      * @brief Number of items in single batch
      */
-    int batch_size = 500;
+    int batch_size = 100;
 
     // File readers
 
-    ifstream* training_data_file = NULL;
-    ifstream* training_labels_file = NULL;
-    ifstream* test_data_file = NULL;
-    ifstream* test_labels_file = NULL;
+    ifstream *training_data_file = NULL;
+    ifstream *training_labels_file = NULL;
+    ifstream *test_data_file = NULL;
+    ifstream *test_labels_file = NULL;
 
     /**
      * @brief Path to binary file containing training inputs
@@ -87,23 +85,23 @@ public:
      * @brief 2-D array containing training batch data. Because batch size doesn't change during training, we initialize
      *        this before hand so we don't need to reallocate memory every batch.
      */
-    float** training_data_batch_buffer = NULL;
+    float **training_data_batch_buffer = NULL;
 
     /**
      * @brief 1-D array containing training batch labels. Because batch size doesn't change during training, we initialize
      *        this before hand so we don't need to reallocate memory every batch.
      */
-    unsigned char* training_labels_batch_buffer = NULL;
+    unsigned char *training_labels_batch_buffer = NULL;
 
     /**
      * @brief 2-D array containing test data.
      */
-    float** test_data_buffer = NULL;
+    float **test_data_buffer = NULL;
 
     /**
      * @brief 1-D array containing test data labels.
      */
-    unsigned char* test_labels_buffer = NULL;
+    unsigned char *test_labels_buffer = NULL;
 
     /**
      * @brief Set the training input file and verify its existence
@@ -132,10 +130,8 @@ public:
 
             total_batch_count = (int)ceil(training_data_items_count / (float)batch_size);
 
-            SPDLOG_DEBUG(
-                "count = " + to_string(training_data_items_count) + ", rows,cols = " +
-                to_string(input_rows) + "," + to_string(input_columns)
-            );
+            SPDLOG_DEBUG("count = " + to_string(training_data_items_count) + ", rows,cols = " + to_string(input_rows) + "," +
+                         to_string(input_columns));
 
             // initialize training data bufferarray, first delete old one incase batch size or bytes-per-item changes
             if (training_data_batch_buffer != NULL) {
@@ -147,7 +143,7 @@ public:
 
             const int values_per_input = input_rows * input_columns;
 
-            training_data_batch_buffer = new float* [batch_size];
+            training_data_batch_buffer = new float *[batch_size];
             for (int x = 0; x < batch_size; x++) {
                 training_data_batch_buffer[x] = new float[values_per_input];
             }
@@ -177,9 +173,7 @@ public:
             training_labels_file->seekg(4); // skip 'magic number'
             training_data_items_count = file_read_big_endian_int32(*training_labels_file);
 
-            SPDLOG_DEBUG(
-                "count = " + to_string(training_data_items_count)
-            );
+            SPDLOG_DEBUG("count = " + to_string(training_data_items_count));
 
             // initialize training labels bufferarray, first delete old one incase batch size changes
             if (training_labels_batch_buffer != NULL) {
@@ -214,10 +208,8 @@ public:
             input_rows = file_read_big_endian_int32(*test_data_file);
             input_columns = file_read_big_endian_int32(*test_data_file);
 
-            SPDLOG_DEBUG(
-                "count = " + to_string(test_data_items_count) + ", rows,cols = " +
-                to_string(input_rows) + "," + to_string(input_columns)
-            );
+            SPDLOG_DEBUG("count = " + to_string(test_data_items_count) + ", rows,cols = " + to_string(input_rows) + "," +
+                         to_string(input_columns));
 
             // initialize test data bufferarray, first delete old one incase item count or bytes-per-item changes
             if (test_data_buffer != NULL) {
@@ -229,7 +221,7 @@ public:
 
             const int values_per_input = input_rows * input_columns;
 
-            test_data_buffer = new float* [test_data_items_count];
+            test_data_buffer = new float *[test_data_items_count];
             for (int x = 0; x < test_data_items_count; x++) {
                 test_data_buffer[x] = new float[values_per_input];
             }
@@ -259,9 +251,7 @@ public:
             test_labels_file->seekg(4); // skip 'magic number'
             test_data_items_count = file_read_big_endian_int32(*test_labels_file);
 
-            SPDLOG_DEBUG(
-                "count = " + to_string(test_data_items_count)
-            );
+            SPDLOG_DEBUG("count = " + to_string(test_data_items_count));
 
             // initialize training labels bufferarray, first delete old one incase batch size changes
             if (test_labels_buffer != NULL) {
@@ -276,11 +266,10 @@ public:
      * @brief Throws error if specified file stream is NULL. We have a separate function for this incase we want to add
      *        additional logic and to keep wording between errors the same.
      */
-    void verify_file_open(ifstream* filestream, string type) {
+    void verify_file_open(ifstream *filestream, string type) {
         if (filestream == NULL) {
             throw invalid_function_call(
-                type + " file has not been opened for reading. Open file using setter functions in TrainingData class."
-            );
+                type + " file has not been opened for reading. Open file using setter functions in TrainingData class.");
         }
     }
 
@@ -292,11 +281,11 @@ public:
 
         int bytes_per_item = input_rows * input_columns;
 
-        uint8_t temp; // temporarily stores byte to be converted to float  
+        uint8_t temp; // temporarily stores byte to be converted to float
 
         for (int x = 0; x < batch_size; x++) {
             for (int y = 0; y < bytes_per_item; y++) {
-                training_data_file->read((char*)(&temp), 1);
+                training_data_file->read((char *)(&temp), 1);
                 training_data_batch_buffer[x][y] = temp / 255.0f; // normalize input between 0 and 1
                 current_record++;
             }
@@ -306,6 +295,15 @@ public:
         }
 
         current_batch++;
+
+        // if we've reached the end of the training data file, re-open so that we loop back
+        if (training_data_file->eof()) {
+            SPDLOG_DEBUG("Looped back training data file");
+            training_data_file->clear();
+            training_data_file->seekg(16);
+            current_record = 0;
+            current_batch = 0;
+        }
     }
 
     /**
@@ -315,10 +313,19 @@ public:
         verify_file_open(training_labels_file, "Training labels");
 
         for (int x = 0; x < batch_size; x++) {
-            training_labels_file->read((char*)(&training_labels_batch_buffer[x]), 1);
+            training_labels_file->read((char *)(&training_labels_batch_buffer[x]), 1);
             if (training_labels_file->eof()) {
                 break;
             }
+        }
+
+        // if we've reached the end of the training labels file, re-open so that we loop back
+        if (training_labels_file->eof()) {
+            SPDLOG_DEBUG("Looped back training labels file");
+            training_labels_file->clear();
+            training_labels_file->seekg(8);
+            current_record = 0;
+            current_batch = 0;
         }
     }
 
@@ -330,11 +337,11 @@ public:
 
         int bytes_per_item = input_rows * input_columns;
 
-        uint8_t temp; // temporarily stores byte to be converted to float        
+        uint8_t temp; // temporarily stores byte to be converted to float
 
         for (int x = 0; x < test_data_items_count; x++) {
             for (int y = 0; y < bytes_per_item; y++) {
-                test_data_file->read((char*)(&temp), 1);
+                test_data_file->read((char *)(&temp), 1);
                 test_data_buffer[x][y] = temp / 255.0f; // normalize input between 0 and 1
             }
         }
@@ -347,7 +354,7 @@ public:
         verify_file_open(test_data_file, "Test labels");
 
         for (int x = 0; x < test_data_items_count; x++) {
-            test_labels_file->read((char*)(&test_labels_buffer[x]), 1);
+            test_labels_file->read((char *)(&test_labels_buffer[x]), 1);
         }
     }
 
@@ -376,5 +383,4 @@ public:
 
         SPDLOG_DEBUG("Deleted training data");
     }
-
 };

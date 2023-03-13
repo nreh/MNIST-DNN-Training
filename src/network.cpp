@@ -1,9 +1,9 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
 #include <stdexcept> // for exceptions
 #include <string>
+#include <vector>
 
 #include "logging.h" // for logging
 
@@ -15,12 +15,11 @@ using namespace std;
  * A neural network with layers and neurons in each layer. Has functions used to execute training iterations.
  */
 class Network {
-public:
-
+  public:
     /**
      * List of all layers in network
      */
-    vector<Layer*> layers;
+    vector<Layer *> layers;
 
     /**
      * @brief Construct a new Neural Network
@@ -39,9 +38,12 @@ public:
         // first create the input layer,
         layers.push_back(new Layer(layer_sizes[0]));
 
+        // create a random engine
+        default_random_engine engine(time(0));
+
         // now create hidden and ouput layers,
         for (int x = 1; x < num_layers; x++) {
-            layers.push_back(new Layer(layer_sizes[x], layer_sizes[x - 1], x));
+            layers.push_back(new Layer(layer_sizes[x], layer_sizes[x - 1], x, engine));
         }
 
         SPDLOG_DEBUG("Created network with {0} layers", num_layers);
@@ -57,7 +59,7 @@ public:
      *                    propagation, all activations are stored in the activations array. Should already be initialzed
      *                    and have hidden/output layer activations initialized to 0.
      */
-    void propagate(float** activations) {
+    void propagate(float **activations) {
         /**
          *?                         ==================================================
          *?                                       🛈 How propagation works
@@ -71,7 +73,7 @@ public:
          *  - So, z = Σ(activations_A * weights_A_B + biases_B)
          *  - The activation of B0 will be σ(z) where σ is the activation function of B0 (ex. RELU, Sigmoid)
          *
-        */
+         */
 
         for (int x = 1; x < layers.size(); x++) {
             layers[x]->propagate(activations[x - 1], activations[x]);
@@ -99,9 +101,11 @@ public:
      *
      * @param label The label for the training data. In this network, this will be the neuron with highest activation in the
      *              output layer.
+     *
+     * @param average_loss The loss of the network on each training record are added to this variable. Divide it by the
+     *                     total number of training records/batch-size to obtain average loss for all training data/batch.
      */
-    void propagate_backpropagate(
-        float** activations, float** error, float*** weight_gradient, unsigned char label) {
+    void propagate_backpropagate(float **activations, float **error, float ***weight_gradient, unsigned char label) {
         // first propagate input through all layers, while also calculating the gradient of the activation function,
         for (int l = 1; l < layers.size(); l++) {
             // The the gradient of the activation function will be stored in the error array. Later, we'll multiply it
@@ -121,7 +125,7 @@ public:
              *      dC/da = a − y
              *
              * Where y is the desired activation of the neuron.
-            */
+             */
             // Once again, we subtract layers.size by 2 because the length of the error array is the number of layers in the
             // network - 1 as the input layer has no error that needs to be calculated.
             if (x == label) {
@@ -158,11 +162,10 @@ public:
     // Clean up
 
     ~Network() {
-        for (int x = 0; x < layers.size();x++) {
+        for (int x = 0; x < layers.size(); x++) {
             delete layers[x];
         }
 
         SPDLOG_DEBUG("Deleted network");
     }
-
 };

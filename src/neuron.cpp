@@ -1,4 +1,4 @@
 class Neuron {
-public:
+  public:
     float bias;
 };

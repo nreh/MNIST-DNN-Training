@@ -7,10 +7,10 @@
  *
  * @return Big endian parsed integer
  */
-int file_read_big_endian_int32(std::ifstream& stream) {
+int file_read_big_endian_int32(std::ifstream &stream) {
 
     int num = 1;
-    if (*(char*)&num == 1) {
+    if (*(char *)&num == 1) {
         // the system is little endian, data needs to be loaded in backwards
         const int byte_count = 4; // int32 contains 4 bytes
 
@@ -29,7 +29,7 @@ int file_read_big_endian_int32(std::ifstream& stream) {
     } else {
         // the system is big endian, so we can load in data normally
         int data;
-        stream.read((char*)&data, 4);
+        stream.read((char *)&data, 4);
         return data;
     }
 }

@@ -7,15 +7,15 @@
 
 namespace logging {
 
-    /**
-     * @brief Initialize logging
-     *
-     * @param argv
-     */
-    void initialize(char* argv[]) {
-        spdlog::set_level(spdlog::level::trace); // Set global log level to trace
+/**
+ * @brief Initialize logging
+ *
+ * @param argv
+ */
+void initialize(char *argv[]) {
+    spdlog::set_level(spdlog::level::trace); // Set global log level to trace
 
-        // change log pattern
-        spdlog::set_pattern("%-20s@ %-25!!%^[%l]: %v%$");
-    }
+    // change log pattern
+    spdlog::set_pattern("%-20s@ %-25!!%^[%l]: %v%$");
 }
+} // namespace logging
