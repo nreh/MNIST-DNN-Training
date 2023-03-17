@@ -7,11 +7,11 @@
 
 using namespace std;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     // initalize and configure spdlog
     logging::initialize(argv);
 
-    int layer_sizes[] = { 28 * 28, 40, 10 };
+    int layer_sizes[] = {28 * 28, 40, 10};
 
     int num_layers = sizeof(layer_sizes) / sizeof(int); // calculate the size of layer_sizes
 
@@ -20,24 +20,18 @@ int main(int argc, char* argv[]) {
 
         // make last layer activation function, sigmoid:
         network.layers[network.layers.size() - 1]->activation_function = Layer::Function::Sigmoid;
-        network.layers[network.layers.size() - 2]->activation_function = Layer::Function::Sigmoid;
-        // // network.layers[network.layers.size() - 3]->activation_function = Layer::Function::Sigmoid;
 
         Trainer trainer(network);
 
         // open test data and labels files
-        trainer.training_data.set_test_data_file(
-            "/home/naqeeb/MNIST-DNN-Training/training_data/bin/test-images.idx3-ubyte");
-        trainer.training_data.set_test_labels_file(
-            "/home/naqeeb/MNIST-DNN-Training/training_data/bin/test-labels.idx1-ubyte");
+        trainer.training_data.set_test_data_file("../training_data/bin/test-images.idx3-ubyte");
+        trainer.training_data.set_test_labels_file("../training_data/bin/test-labels.idx1-ubyte");
 
         trainer.training_data.get_test_data();
         trainer.training_data.get_test_labels();
 
-        trainer.training_data.set_training_data_file(
-            "/home/naqeeb/MNIST-DNN-Training/training_data/bin/train-images.idx3-ubyte");
-        trainer.training_data.set_training_labels_file(
-            "/home/naqeeb/MNIST-DNN-Training/training_data/bin/train-labels.idx1-ubyte");
+        trainer.training_data.set_training_data_file("../training_data/bin/train-images.idx3-ubyte");
+        trainer.training_data.set_training_labels_file("../training_data/bin/train-labels.idx1-ubyte");
 
         trainer.train(100);
 

@@ -18,25 +18,25 @@
 #include "../network.cpp"
 
 class Trainer {
-private:
+  private:
     /**
      * @brief Neural network instance this trainer is being created for
      */
-    Network* network = NULL;
+    Network *network = NULL;
 
     // We don't want to reallocate this memory for every record trained, we do it once.
 
     /**
      * @brief 3-D array storing activation of each layer in network in every training batch.
      */
-    float*** activations = NULL;
+    float ***activations = NULL;
 
     /**
      * @brief 2D array containing the error for each layer in network EXCEPT for the input layer (The input layer has
      *        no bias or weights so no weights/biases to train). Used for storing errors that are used for
      *        backpropagation. For every training batch.
      */
-    float*** error = NULL;
+    float ***error = NULL;
 
     /**
      * @brief 3D array containing the cost gradients of each weight in each layer (expect for input, which has no weights or
@@ -45,7 +45,7 @@ private:
      *        because the calculated weight gradient will just be added together and divided by the batch size to obtain
      *        the average weight_gradient for the entire training data batch.
      */
-    float*** weight_gradient = NULL;
+    float ***weight_gradient = NULL;
 
     /**
      * @brief Store a copy of network layer sizes here incase the original network object is deleted.
@@ -58,7 +58,7 @@ private:
      */
     string log_file;
 
-public:
+  public:
     float step_size = 0.005f;
 
     /**
@@ -69,7 +69,7 @@ public:
      */
     string training_logs_output_folder = "./log";
 
-    void setNetwork(Network& network) {
+    void setNetwork(Network &network) {
         this->network = &network;
 
         // initialize the activations, error, and weight_gradient array:
@@ -84,25 +84,25 @@ public:
             layer_sizes.push_back(network.layers[l]->size);
         }
 
-        activations = new float** [training_data.batch_size];
+        activations = new float **[training_data.batch_size];
         for (int b = 0; b < training_data.batch_size; b++) {
-            activations[b] = new float* [network.layers.size()];
+            activations[b] = new float *[network.layers.size()];
             for (int x = 0; x < network.layers.size(); x++) {
                 activations[b][x] = new float[network.layers[x]->size];
             }
         }
 
-        error = new float** [training_data.batch_size];
+        error = new float **[training_data.batch_size];
         for (int b = 0; b < training_data.batch_size; b++) {
-            error[b] = new float* [network.layers.size() - 1];
+            error[b] = new float *[network.layers.size() - 1];
             for (int x = 0; x < network.layers.size() - 1; x++) {
                 error[b][x] = new float[network.layers[x + 1]->size];
             }
         }
 
-        weight_gradient = new float** [network.layers.size() - 1];
+        weight_gradient = new float **[network.layers.size() - 1];
         for (int l = 1; l < network.layers.size(); l++) {
-            weight_gradient[l - 1] = new float* [network.layers[l - 1]->size];
+            weight_gradient[l - 1] = new float *[network.layers[l - 1]->size];
             for (int x = 0; x < network.layers[l - 1]->size; x++) {
                 weight_gradient[l - 1][x] = new float[network.layers[l]->size];
             }
@@ -119,7 +119,7 @@ public:
      *
      * @param network Network trainer is being created for
      */
-    Trainer(Network& network) { setNetwork(network); }
+    Trainer(Network &network) { setNetwork(network); }
 
     ~Trainer() {
         for (int b = 0; b < training_data.batch_size; b++) {
@@ -169,7 +169,7 @@ public:
 
         if (!writer.good()) {
             SPDLOG_WARN("Unable to create log file, are you sure the target folder (" + training_logs_output_folder +
-                ") exists?");
+                        ") exists?");
         }
 
         log_file = filename;
@@ -217,9 +217,9 @@ public:
      * TODO: Expand on this
      */
 
-     /**
-      * @brief Instance of TrainingData object used for storing and reading from training data files
-      */
+    /**
+     * @brief Instance of TrainingData object used for storing and reading from training data files
+     */
     TrainingData training_data;
 
     /**
@@ -229,14 +229,14 @@ public:
      */
     float test_network() {
 
-        SPDLOG_INFO("Testing neural network on " + to_string(training_data.test_data_items_count) + " test records...");
+        // SPDLOG_INFO("Testing neural network on " + to_string(training_data.test_data_items_count) + " test records...");
 
         if (network == NULL) {
             throw invalid_function_call("Trainer does not have any network to test on");
         }
 
         // 2-d array that will store our activations,
-        float** activations_per_layer = new float* [network->layers.size()];
+        float **activations_per_layer = new float *[network->layers.size()];
 
         for (int x = 0; x < network->layers.size(); x++) {
             activations_per_layer[x] = new float[network->layers[x]->size];
@@ -261,7 +261,7 @@ public:
             network->propagate(activations_per_layer);
 
             // find index of neuron in output layer that has the highest activation,
-            const float* last_layer_activations = activations_per_layer[network->layers.size() - 1];
+            const float *last_layer_activations = activations_per_layer[network->layers.size() - 1];
 
             int index_of_highest_activation = 0;
             float highest_activation = last_layer_activations[0];
@@ -280,13 +280,14 @@ public:
                 correct_guesses++;
             }
 
-            if (t == 0) {
-                // print last layer ouputs
-                for (int x = 0; x < layer_sizes[layer_sizes.size() - 1]; x++) {
-                    SPDLOG_DEBUG(to_string(x) + ": " + to_string(activations_per_layer[layer_sizes.size() - 1][x]));
-                }
-                SPDLOG_DEBUG("Label is " + to_string(training_data.test_labels_buffer[t]));
-            }
+            // print out last layer activations for 0th test item for debugging
+            // // if (t == 0) {
+            // //     // print last layer ouputs
+            // //     for (int x = 0; x < layer_sizes[layer_sizes.size() - 1]; x++) {
+            // //         SPDLOG_DEBUG(to_string(x) + ": " + to_string(activations_per_layer[layer_sizes.size() - 1][x]));
+            // //     }
+            // //     SPDLOG_DEBUG("Label is " + to_string(training_data.test_labels_buffer[t]));
+            // // }
         }
 
         for (int x = 0; x < network->layers.size(); x++) {
@@ -303,17 +304,17 @@ public:
      * @param epochs Number of epochs to train for
      */
     void train(int epochs) {
-        SPDLOG_INFO("Training network for " + to_string(epochs) + " epochs");
+        SPDLOG_INFO("Training network for {0} epochs", epochs);
 
         create_log_file();
 
         for (int x = 0; x <= epochs; x++) {
             float accuracy = test_network();
-            SPDLOG_INFO("Accuracy: " + to_string(accuracy * 100.0f) + "%");
+            SPDLOG_INFO("Accuracy: {0}%", to_string(accuracy * 100.0f));
 
             write_to_log_file(x, accuracy);
 
-            SPDLOG_INFO("Training epoch " + x);
+            SPDLOG_INFO("Training epoch {0}...", x);
 
             train_epoch();
         }
@@ -410,7 +411,7 @@ public:
      * @param label Label for this record
      * @param batch_record_index Index in record that this batch is part of
      */
-    void train_record(float* record, unsigned char label, int batch_record_index) {
+    void train_record(float *record, unsigned char label, int batch_record_index) {
         // load record into input layer
         for (int x = 0; x < network->layers[0]->size; x++) {
             activations[batch_record_index][0][x] = record[x];

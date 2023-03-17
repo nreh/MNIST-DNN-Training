@@ -298,7 +298,6 @@ class TrainingData {
 
         // if we've reached the end of the training data file, re-open so that we loop back
         if (training_data_file->eof()) {
-            SPDLOG_DEBUG("Looped back training data file");
             training_data_file->clear();
             training_data_file->seekg(16);
             current_record = 0;
@@ -321,7 +320,6 @@ class TrainingData {
 
         // if we've reached the end of the training labels file, re-open so that we loop back
         if (training_labels_file->eof()) {
-            SPDLOG_DEBUG("Looped back training labels file");
             training_labels_file->clear();
             training_labels_file->seekg(8);
             current_record = 0;
