@@ -5,7 +5,7 @@
 class ActivationFunctions {
   public:
     // σ(x) = x when x >= 0  &  σ(x) = 0 when x < 0
-    static float RELU(float x) {
+    static float ReLU(float x) {
         if (x < 0) {
             return 0;
         } else {
@@ -22,7 +22,7 @@ class ActivationFunctions {
 class ActivationFunctionGradients {
   public:
     // σ′(x) = 1 when x >= 0  &  σ′(x) = 0 when x < 0
-    static float RELU_gradient(float x) {
+    static float ReLU_gradient(float x) {
         if (x < 0) {
             return 0;
         } else {

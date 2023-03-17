@@ -41,12 +41,24 @@ class Layer {
      */
     int layer_index = 0;
 
-    enum Function { RELU, Sigmoid };
+    /**
+     * @brief Activation function enum
+     */
+    enum Function {
+        /**
+         * @brief Rectified Linear Unit (ReLU) activation function
+         */
+        ReLU,
+        /**
+         * @brief Sigmoid activation function
+         */
+        Sigmoid
+    };
 
     /**
-     * @brief Activation function used by this layer
+     * @brief Activation function used by this layer. *Default is ReLU*
      */
-    Function activation_function = Function::RELU;
+    Function activation_function = Function::ReLU;
 
     /**
      * @brief Construct a new input layer. This should only be the first layer of the Network.
@@ -130,10 +142,10 @@ class Layer {
 
         // apply activation function,
 
-        if (activation_function == RELU) {
+        if (activation_function == ReLU) {
             for (int x = 0; x < size; x++) {
                 out[x] += biases[x];
-                out[x] = ActivationFunctions::RELU(out[x]);
+                out[x] = ActivationFunctions::ReLU(out[x]);
             }
         } else if (activation_function == Sigmoid) {
             for (int x = 0; x < size; x++) {
@@ -177,10 +189,10 @@ class Layer {
 
         // Before overwriting out[] array by running them through the activation funcition, we calculate and write the
         // activation funciton gradient to out_gradient[]. (out_gradient = σ′(z))
-        if (activation_function == RELU) {
+        if (activation_function == ReLU) {
             for (int x = 0; x < size; x++) {
                 out[x] += biases[x];
-                gradient_out[x] = ActivationFunctionGradients::RELU_gradient(out[x]);
+                gradient_out[x] = ActivationFunctionGradients::ReLU_gradient(out[x]);
             }
         } else if (activation_function == Sigmoid) {
             for (int x = 0; x < size; x++) {
@@ -190,9 +202,9 @@ class Layer {
         }
 
         // apply activation function,
-        if (activation_function == RELU) {
+        if (activation_function == ReLU) {
             for (int x = 0; x < size; x++) {
-                out[x] = ActivationFunctions::RELU(out[x]);
+                out[x] = ActivationFunctions::ReLU(out[x]);
             }
         } else if (activation_function == Sigmoid) {
             for (int x = 0; x < size; x++) {

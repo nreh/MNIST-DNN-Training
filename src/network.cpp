@@ -71,7 +71,7 @@ class Network {
          *  - Multiply activation of A0 with weight of neuron connection from A0 to B0 & add bias of B0
          *  - Do the same for the rest of the neurons in layer A and add them up, let's call the resulting value: z
          *  - So, z = Σ(activations_A * weights_A_B + biases_B)
-         *  - The activation of B0 will be σ(z) where σ is the activation function of B0 (ex. RELU, Sigmoid)
+         *  - The activation of B0 will be σ(z) where σ is the activation function of B0 (ex. ReLU, Sigmoid)
          *
          */
 

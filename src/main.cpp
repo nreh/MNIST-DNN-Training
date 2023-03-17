@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
         Trainer trainer(network);
 
         // open test data and labels files
-        trainer.training_data.set_test_data_file("../training_data/bin/test-images.idx3-ubyte");
-        trainer.training_data.set_test_labels_file("../training_data/bin/test-labels.idx1-ubyte");
+        // // trainer.training_data.set_test_data_file("../training_data/bin/test-images.idx3-ubyte");
+        // // trainer.training_data.set_test_labels_file("../training_data/bin/test-labels.idx1-ubyte");
 
         trainer.training_data.get_test_data();
         trainer.training_data.get_test_labels();
