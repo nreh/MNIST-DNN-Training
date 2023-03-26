@@ -1,8 +1,12 @@
 #pragma once
 
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <string>
+
+// OpenMP runtime library which we'll use for getting/setting number of threads
+#include <omp.h>
 
 // for generating current datetime
 #include "../utils/datetime.cpp"
@@ -305,6 +309,7 @@ class Trainer {
      */
     void train(int epochs) {
         SPDLOG_INFO("Training network for {0} epochs", epochs);
+        SPDLOG_DEBUG("Number of threads {0}", omp_get_max_threads());
 
         create_log_file();
 
@@ -316,7 +321,13 @@ class Trainer {
 
             SPDLOG_INFO("Training epoch {0}...", x);
 
+            auto t_start = std::chrono::high_resolution_clock::now();
             train_epoch();
+            auto t_end = std::chrono::high_resolution_clock::now();
+
+            double elapsed_time_s = std::chrono::duration<double>(t_end - t_start).count();
+
+            SPDLOG_DEBUG("Training took {0} seconds", elapsed_time_s);
         }
     }
 
@@ -350,26 +361,38 @@ class Trainer {
             batch_size = training_data.training_data_items_count % batch_size;
         }
 
-        // set all values to zero in activations and weight_gradient matrix.
+        // 'pragma omp parallel' is a preprocessor directive that lets us run for-loops in multiple threads in an easy way
+        // https://www.openmp.org/
+        // https://hpc-tutorials.llnl.gov/openmp/   <-- Good reference material
 
-        for (int b = 0; b < training_data.batch_size; b++) {
-            for (int l = 0; l < network->layers.size(); l++) {
-                for (int x = 0; x < network->layers[l]->size; x++) {
-                    activations[b][l][x] = 0;
+        // // #pragma omp parallel
+        {
+            // set all values to zero in activations and weight_gradient matrix.
+            for (int b = 0; b < training_data.batch_size; b++) {
+                for (int l = 0; l < network->layers.size(); l++) {
+                    for (int x = 0; x < network->layers[l]->size; x++) {
+                        activations[b][l][x] = 0;
+                    }
                 }
             }
         }
 
-        for (int l = 1; l < network->layers.size(); l++) {
-            for (int x = 0; x < network->layers[l - 1]->size; x++) {
-                for (int y = 0; y < network->layers[l]->size; y++) {
-                    weight_gradient[l - 1][x][y] = 0;
+        // // #pragma omp parallel
+        {
+            for (int l = 1; l < network->layers.size(); l++) {
+                for (int x = 0; x < network->layers[l - 1]->size; x++) {
+                    for (int y = 0; y < network->layers[l]->size; y++) {
+                        weight_gradient[l - 1][x][y] = 0;
+                    }
                 }
             }
         }
 
-        for (int x = 0; x < batch_size; x++) {
-            train_record(training_data.training_data_batch_buffer[x], training_data.training_labels_batch_buffer[x], x);
+        // // #pragma omp parallel
+        {
+            for (int x = 0; x < batch_size; x++) {
+                train_record(training_data.training_data_batch_buffer[x], training_data.training_labels_batch_buffer[x], x);
+            }
         }
 
         // weight gradients now contains the sum of weight gradients of all training records,
