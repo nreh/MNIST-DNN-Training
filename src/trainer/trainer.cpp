@@ -169,7 +169,7 @@ class Trainer {
 
         SPDLOG_INFO("Writing training stats to " + dest.string());
 
-        ofstream writer(filename, ios_base::openmode::_S_trunc);
+        ofstream writer(filename, ios_base::trunc);
 
         if (!writer.good()) {
             SPDLOG_WARN("Unable to create log file, are you sure the target folder (" + training_logs_output_folder +
@@ -203,7 +203,7 @@ class Trainer {
      * @brief Append to log file. Make sure to call `create_log_file()` before this function.
      */
     void write_to_log_file(int epoch, float accuracy) {
-        ofstream writer(log_file, ios_base::openmode::_S_app);
+        ofstream writer(log_file, ios_base::app);
         writer << epoch << "," << accuracy << endl;
     }
 
@@ -388,7 +388,7 @@ class Trainer {
             }
         }
 
-        // // #pragma omp parallel
+#pragma omp parallel
         {
             for (int x = 0; x < batch_size; x++) {
                 train_record(training_data.training_data_batch_buffer[x], training_data.training_labels_batch_buffer[x], x);
