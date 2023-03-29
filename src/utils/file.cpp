@@ -18,7 +18,7 @@ std::string get_unique_filename(std::string filename) {
     //? Maybe figure out a better way to do this
 
     std::filesystem::path p(filename);
-    std::string name = p.stem();
+    std::string name = p.stem().string();
 
     if (!std::filesystem::exists(p)) {
         return filename;
