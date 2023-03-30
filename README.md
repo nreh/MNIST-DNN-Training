@@ -8,6 +8,12 @@ point for implementing a training algorithm.
 
 ## Quick Start
 
+Before building project, initialize and update submodules,
+```
+git submodule init
+git submodule update
+```
+
 To build project,
 ```
 mkdir build
