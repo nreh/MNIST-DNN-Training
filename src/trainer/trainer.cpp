@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -316,7 +317,14 @@ class Trainer {
 
             SPDLOG_INFO("Training epoch {0}...", x);
 
+            auto t_start = std::chrono::high_resolution_clock::now();
+
             train_epoch();
+
+            auto t_end = std::chrono::high_resolution_clock::now();
+            double elapsed_time_s = std::chrono::duration<double>(t_end - t_start).count();
+
+            SPDLOG_DEBUG("Training took {0} seconds", elapsed_time_s);
         }
     }
 
