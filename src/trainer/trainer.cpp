@@ -303,17 +303,22 @@ class Trainer {
      * @brief Train neural network for some number of epochs while writing accuracy to a log file.
      *
      * @param epochs Number of epochs to train for
+     * @param log_accuracy Whether or not to create and write to a log file the accuracy of the network as epochs are trained
      */
-    void train(int epochs) {
+    void train(int epochs, bool log_accuracy) {
         SPDLOG_INFO("Training network for {0} epochs", epochs);
 
-        create_log_file();
+        if (log_accuracy) {
+            create_log_file();
+        }
 
         for (int x = 0; x <= epochs; x++) {
             float accuracy = test_network();
             SPDLOG_INFO("Accuracy: {0}%", to_string(accuracy * 100.0f));
 
-            write_to_log_file(x, accuracy);
+            if (log_accuracy) {
+                write_to_log_file(x, accuracy);
+            }
 
             SPDLOG_INFO("Training epoch {0}...", x);
 

@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     string training_data_file, training_labels_file, test_data_file, test_labels_file;
 
     bool verbose = false;
+    bool log_accuracy = true;
 
     app.add_option("--training_data", training_data_file, "Path to training data file")->required();
     app.add_option("--training_labels", training_labels_file, "Path to training labels file")->required();
@@ -32,10 +33,17 @@ int main(int argc, char *argv[]) {
 
     app.add_flag("-v,--verbose", verbose, "Print out debug information as well")->default_val(false);
 
+    // We can disable logging for whatever reason by passing the --no-logging flag
+    app.add_flag("--no-logging{false}", log_accuracy, "Disable logging by passing the --no-logging flag")->default_val(true);
+
     CLI11_PARSE(app);
 
     // initalize and configure spdlog
     logging::initialize(verbose);
+
+    if (!log_accuracy) {
+        SPDLOG_INFO("--no-logging flag means logging is disabled.");
+    }
 
     int layer_sizes[] = {28 * 28, 40, 10};
 
@@ -59,7 +67,7 @@ int main(int argc, char *argv[]) {
         trainer.training_data.set_training_data_file(training_data_file);
         trainer.training_data.set_training_labels_file(training_labels_file);
 
-        trainer.train(100);
+        trainer.train(100, log_accuracy);
 
     } catch (invalid_argument e) {
         SPDLOG_ERROR(e.what());
