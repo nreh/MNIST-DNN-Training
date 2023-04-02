@@ -11,7 +11,7 @@ std::string get_current_datetime() {
     auto tm = *std::localtime(&t);
 
     std::ostringstream oss;
-    oss << std::put_time(&tm, "%d-%B-%Y_%H:%M:%S");
+    oss << std::put_time(&tm, "%d-%B-%Y_%H-%M-%S");
     auto str = oss.str();
 
     return str;
