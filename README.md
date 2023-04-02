@@ -48,10 +48,10 @@ Options:
 To start training, pass the proper paths for training/test data as well as any flags,
 
 ```
-./runme --training_data ..\training_data\bin\train-images.idx3-ubyte \
-        --training_labels ..\training_data\bin\train-labels.idx1-ubyte \
-        --test_data ..\training_data\bin\test-images.idx3-ubyte \
-        --test_labels ..\training_data\bin\test-labels.idx1-ubyte
+./runme --training_data ../training_data/bin/train-images.idx3-ubyte \
+        --training_labels ../training_data/bin/train-labels.idx1-ubyte \
+        --test_data ../training_data/bin/test-images.idx3-ubyte \
+        --test_labels ../training_data/bin/test-labels.idx1-ubyte
 ```
 
 You can also pass the `-v` flag to enable verbose debugging
