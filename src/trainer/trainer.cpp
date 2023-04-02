@@ -280,15 +280,6 @@ class Trainer {
                 // correct guess
                 correct_guesses++;
             }
-
-            // print out last layer activations for 0th test item for debugging
-            // // if (t == 0) {
-            // //     // print last layer ouputs
-            // //     for (int x = 0; x < layer_sizes[layer_sizes.size() - 1]; x++) {
-            // //         SPDLOG_DEBUG(to_string(x) + ": " + to_string(activations_per_layer[layer_sizes.size() - 1][x]));
-            // //     }
-            // //     SPDLOG_DEBUG("Label is " + to_string(training_data.test_labels_buffer[t]));
-            // // }
         }
 
         for (int x = 0; x < network->layers.size(); x++) {
