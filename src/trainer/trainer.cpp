@@ -215,7 +215,8 @@ class Trainer {
      * data not in the training set. If the neural network performs well on training data and unwell on test data, that
      * could mean we are over fitting the model.
      *
-     * TODO: Expand on this
+     * Check out /training_data/convert_to_csv.py for documentation and some simple code that can help with understanding
+     * the format of the training data.
      */
 
     /**

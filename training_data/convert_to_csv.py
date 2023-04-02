@@ -1,4 +1,8 @@
-# Python script for converting MNIST data to CSV files that is able to be read by Trainer
+#
+# Note: This script is no longer used, however I'm keeping it here as it can be useful for other projects
+#
+
+# Python script for converting MNIST data to CSV files
 # furthermore, it normalizes the values (0-255) to between 0 and 1.
 
 import logging
