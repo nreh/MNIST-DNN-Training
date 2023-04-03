@@ -1,7 +1,7 @@
 # MNIST-DNN-Training
 Training a Deep Neural Network (DNN) on the MNIST dataset.
 
-## 🥅 Goal
+## 🎯 Goal
 
 Create minimum implementation of backpropagation algorithm to train a DNN as both an educational resource and a starting
 point for implementing a training algorithm.
